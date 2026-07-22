@@ -43,3 +43,7 @@ next-env.d.ts
 # Prisma local database
 /prisma/*.db
 /prisma/*.db-journal
+
+# Python cache from skill scripts
+__pycache__/
+*.pyc
