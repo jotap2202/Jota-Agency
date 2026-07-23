@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #081619;
+  --bg-alt: #0b1d22;
+  --panel: #0f2429;
+  --panel-soft: #16333a;
+  --line: #1f444c;
+  --text: #eff6f5;
+  --dim: #8fb0ae;
+  --gold: #e3b341;
+  --gold-2: #f0c75e;
+  --gold-dark: #171204;
+  --green: #4fc58b;
+  --red: #e06c5b;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-alt: var(--bg-alt);
+  --color-panel: var(--panel);
+  --color-panel-soft: var(--panel-soft);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-dim: var(--dim);
+  --color-gold: var(--gold);
+  --color-gold-2: var(--gold-2);
+  --color-green: var(--green);
+  --color-red: var(--red);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--gold-dark);
+}
+
+.font-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+}
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+.gold-grad {
+  background: linear-gradient(135deg, #f0c75e 0%, #e3b341 55%, #c99427 100%);
+}
+.gold-grad-text {
+  background: linear-gradient(135deg, #f0c75e 0%, #e3b341 55%, #c99427 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold-2);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6d8f8d;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
