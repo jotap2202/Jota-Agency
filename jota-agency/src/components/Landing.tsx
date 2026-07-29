@@ -400,7 +400,8 @@ export function Landing({ userEmail }: { userEmail?: string | null }) {
         <div className="wrap">
           <div className="foot-big" aria-hidden>JOTA</div>
           <div className="foot-row">
-            <span className="badge" aria-hidden>J</span>
+            {/* Acceso al panel de leads. Solo entra el equipo; al resto le avisa que es privado. */}
+            <a href="/panel" className="badge" title="Acceso al panel" aria-label="Acceso al panel de leads">J</a>
             <a href={mailto(t.asuntoMail)} className="mono" style={{ color: "var(--gold)", fontSize: 13 }}>{EMAIL_CONTACTO}</a>
             <span className="mono">{t.footer}</span>
           </div>
