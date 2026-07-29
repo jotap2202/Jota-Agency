@@ -503,6 +503,7 @@ function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
   const [desc, setDesc] = useState("");
   const [resultado, setResultado] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [esDemo, setEsDemo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pedir = async () => {
@@ -511,16 +512,36 @@ function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
     setCargando(true);
     setError(null);
     setResultado(null);
+    setEsDemo(false);
     try {
       const res = await fetch("/api/diagnostico", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ consulta, idioma: lang }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || d.errorConexion);
-      setResultado(data.resultado);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || d.errorConexion);
+      }
+
+      setEsDemo(res.headers.get("X-Diagnostico-Modo") === "demo");
+
+      // J va escribiendo: mostramos el texto a medida que llega
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error(d.errorConexion);
+      const decoder = new TextDecoder();
+      let acumulado = "";
+      setResultado("");
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acumulado += decoder.decode(value, { stream: true });
+        setResultado(acumulado);
+      }
+      if (!acumulado.trim()) throw new Error(d.errorConexion);
     } catch (e) {
+      setResultado(null);
       setError(e instanceof Error ? e.message : d.errorConexion);
     } finally {
       setCargando(false);
@@ -551,15 +572,29 @@ function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
       ) : (
         <div style={{ marginTop: 12 }}>
           <div className="eyebrow"><span className="l" /><span className="t">{d.resultado}</span></div>
-          <p className="result" aria-live="polite">{resultado}</p>
-          <div style={{ marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <a href="mailto:hola@jota.agency?subject=Quiero%20agendar%20la%20llamada%20de%2015%20min" className="btn-gold">
-              {d.ctaLlamada} <span aria-hidden>→</span>
-            </a>
-            <button onClick={() => { setResultado(null); setDesc(""); }} style={{ fontSize: 14, color: "var(--dim)", textDecoration: "underline", background: "none", border: "none" }}>
-              {d.denuevo}
-            </button>
-          </div>
+          <p className="result" aria-live="polite" aria-busy={cargando}>
+            {resultado}
+            {cargando && <span className="caret" aria-hidden />}
+          </p>
+
+          {esDemo && (
+            <p className="demo-note" role="status">
+              ⚠︎ {lang === "es"
+                ? "Modo demo: falta configurar ANTHROPIC_API_KEY en Vercel. Con la clave, J genera un diagnóstico único para cada visitante."
+                : "Demo mode: ANTHROPIC_API_KEY is not set in Vercel. With the key, J writes a unique diagnosis for every visitor."}
+            </p>
+          )}
+
+          {!cargando && (
+            <div style={{ marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+              <a href="mailto:hola@jota.agency?subject=Quiero%20agendar%20la%20llamada%20de%2015%20min" className="btn-gold">
+                {d.ctaLlamada} <span aria-hidden>→</span>
+              </a>
+              <button onClick={() => { setResultado(null); setDesc(""); setEsDemo(false); }} style={{ fontSize: 14, color: "var(--dim)", textDecoration: "underline", background: "none", border: "none" }}>
+                {d.denuevo}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </>

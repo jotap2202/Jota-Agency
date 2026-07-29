@@ -280,3 +280,11 @@ textarea.jfield { resize: vertical; min-height: 104px; }
   .line-mask > span { transform: none !important; animation: none !important; }
   .marquee, .dot { animation: none !important; }
 }
+
+/* cursor de "J está escribiendo" durante el streaming */
+.caret { display: inline-block; width: 8px; height: 1.05em; margin-left: 3px; vertical-align: text-bottom;
+  background: var(--gold); animation: caret-blink 1s steps(1) infinite; }
+@keyframes caret-blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+.demo-note { font-family: var(--font-mono), monospace; font-size: 11px; color: var(--dim); margin-top: 14px;
+  border-top: 1px solid var(--lineSoft); padding-top: 12px; line-height: 1.6; }
+@media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
