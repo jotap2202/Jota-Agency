@@ -16,16 +16,25 @@ const diasAtras = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 export default async function PanelPage() {
   const session = await auth();
   if (!session?.user) redirect("/acceder?next=/panel");
-  if (!esAdmin(session.user.email)) {
+  if (!(await esAdmin(session.user.email))) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center px-5 text-center gap-4">
         <span className="h-12 w-12 rounded-2xl flex items-center justify-center gold-grad font-display font-bold text-xl" style={{ color: "var(--gold-dark)" }}>J</span>
         <h1 className="font-display" style={{ fontSize: 24 }}>Esta sección es privada</h1>
-        <p style={{ color: "var(--dim)", fontSize: 14, maxWidth: 380, lineHeight: 1.7 }}>
-          El panel de leads es solo para el equipo de JOTA agency. Estás entrando como{" "}
-          <span style={{ color: "var(--gold)" }}>{session.user.email}</span>.
+        <p style={{ color: "var(--dim)", fontSize: 14, maxWidth: 420, lineHeight: 1.7 }}>
+          El panel de leads es solo para el equipo de JOTA agency. Entraste con esta cuenta:
         </p>
-        <Link href="/" className="btn-ghost" style={{ marginTop: 8 }}>Volver al inicio</Link>
+        <p className="font-mono" style={{ color: "var(--gold)", fontSize: 14, wordBreak: "break-all" }}>{session.user.email}</p>
+        <p style={{ color: "var(--dim)", fontSize: 13, maxWidth: 420, lineHeight: 1.7 }}>
+          Si el panel es tuyo, pasale ese mail a quien administra el sitio para que te habilite,
+          o entrá con la cuenta con la que creaste la web.
+        </p>
+        <div className="flex gap-3 flex-wrap justify-center" style={{ marginTop: 8 }}>
+          <Link href="/" className="btn-ghost">Volver al inicio</Link>
+          <form action={async () => { "use server"; await signOut({ redirectTo: "/acceder?next=/panel" }); }}>
+            <button type="submit" className="btn-ghost">Entrar con otra cuenta</button>
+          </form>
+        </div>
       </main>
     );
   }

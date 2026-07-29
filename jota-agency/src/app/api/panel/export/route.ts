@@ -13,7 +13,7 @@ function celda(v: unknown): string {
 
 export async function GET() {
   const session = await auth();
-  if (!esAdmin(session?.user?.email)) {
+  if (!(await esAdmin(session?.user?.email))) {
     return new Response("No autorizado", { status: 403 });
   }
 
