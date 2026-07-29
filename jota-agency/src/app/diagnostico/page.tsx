@@ -2,10 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { DiagnosticoClient } from "@/components/DiagnosticoClient";
+import { CompletarEmpresa } from "@/components/CompletarEmpresa";
+import { faltaEmpresa } from "@/lib/perfil";
 
 export default async function DiagnosticoPage() {
   const session = await auth();
   if (!session?.user) redirect("/acceder?next=/diagnostico");
+  const sinEmpresa = await faltaEmpresa(session.user.email);
 
   return (
     <main className="min-h-screen px-5 py-16" style={{ background: "radial-gradient(600px 300px at 50% 0%, rgba(227,179,65,0.1), transparent)" }}>
@@ -31,7 +34,13 @@ export default async function DiagnosticoPage() {
           </p>
         </div>
 
-        <DiagnosticoClient email={session.user.email} />
+        {sinEmpresa ? (
+          <div className="rounded-3xl p-6" style={{ background: "var(--panel)", border: "1px solid var(--line)" }}>
+            <CompletarEmpresa />
+          </div>
+        ) : (
+          <DiagnosticoClient email={session.user.email} />
+        )}
       </div>
     </main>
   );

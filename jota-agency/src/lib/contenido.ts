@@ -55,6 +55,11 @@ export type Contenido = {
     conectado: string;
     ctaLlamada: string;
     errorConexion: string;
+    empTitulo: string;
+    empSub: string;
+    empPlaceholder: string;
+    empBoton: string;
+    empError: string;
   };
   cierre: { lineas: string[]; sub: string; cta: string; nota: string; oEscribinos: string };
   footer: string;
@@ -161,6 +166,11 @@ export const T: Record<Idioma, Contenido> = {
       conectado: "Conectado como",
       ctaLlamada: "Agendar llamada de 15 min",
       errorConexion: "No pude conectar con J. Probá de nuevo.",
+      empTitulo: "Una cosa más antes de empezar",
+      empSub: "Decinos cómo se llama tu empresa para que J pueda darte un diagnóstico a medida.",
+      empPlaceholder: "Nombre de tu empresa",
+      empBoton: "Continuar",
+      empError: "Escribí el nombre de tu empresa.",
     },
     cierre: {
       lineas: ["¿Listo para que", "te busquen a vos?"],
@@ -271,6 +281,11 @@ export const T: Record<Idioma, Contenido> = {
       conectado: "Signed in as",
       ctaLlamada: "Book a 15-min call",
       errorConexion: "Couldn't reach J. Please try again.",
+      empTitulo: "One more thing before we start",
+      empSub: "Tell us your company's name so J can tailor the diagnosis to you.",
+      empPlaceholder: "Your company's name",
+      empBoton: "Continue",
+      empError: "Please enter your company's name.",
     },
     cierre: {
       lineas: ["Ready to be the one", "they look for?"],
