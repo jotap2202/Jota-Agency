@@ -20,10 +20,25 @@ export function DiagnosticoClient({ email }: { email?: string | null }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ consulta, idioma: "es" }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error");
-      setResultado(data.resultado);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Error");
+      }
+      // J va escribiendo: mostramos el texto a medida que llega
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("Error");
+      const decoder = new TextDecoder();
+      let acumulado = "";
+      setResultado("");
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acumulado += decoder.decode(value, { stream: true });
+        setResultado(acumulado);
+      }
+      if (!acumulado.trim()) throw new Error("Error");
     } catch (e) {
+      setResultado(null);
       setError(e instanceof Error ? e.message : "No pude conectar con J. Probá de nuevo.");
     } finally {
       setCargando(false);
