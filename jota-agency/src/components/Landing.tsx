@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { T, EMAIL_CONTACTO, type Idioma } from "@/lib/contenido";
+import { CompletarEmpresa } from "@/components/CompletarEmpresa";
 
 /** Link de mail con el asunto ya escrito, para que la consulta llegue ordenada. */
 const mailto = (asunto: string) => `mailto:${EMAIL_CONTACTO}?subject=${encodeURIComponent(asunto)}`;
@@ -20,7 +21,11 @@ const GoogleIcon = () => (
   </svg>
 );
 
-export function Landing({ userEmail, google = true }: { userEmail?: string | null; google?: boolean }) {
+export function Landing({
+  userEmail,
+  google = true,
+  faltaEmpresa = false,
+}: { userEmail?: string | null; google?: boolean; faltaEmpresa?: boolean }) {
   const [lang, setLang] = useState<Idioma>("es");
   const rootRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -370,7 +375,13 @@ export function Landing({ userEmail, google = true }: { userEmail?: string | nul
                   </div>
                 </div>
               </div>
-              {userEmail ? <DiagChat lang={lang} email={userEmail} /> : <AuthGate lang={lang} google={google} />}
+              {!userEmail ? (
+                <AuthGate lang={lang} google={google} />
+              ) : faltaEmpresa ? (
+                <CompletarEmpresa lang={lang} />
+              ) : (
+                <DiagChat lang={lang} email={userEmail} />
+              )}
             </div>
           </div>
         </section>
