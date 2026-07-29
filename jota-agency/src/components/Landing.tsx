@@ -20,7 +20,7 @@ const GoogleIcon = () => (
   </svg>
 );
 
-export function Landing({ userEmail }: { userEmail?: string | null }) {
+export function Landing({ userEmail, google = true }: { userEmail?: string | null; google?: boolean }) {
   const [lang, setLang] = useState<Idioma>("es");
   const rootRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -370,7 +370,7 @@ export function Landing({ userEmail }: { userEmail?: string | null }) {
                   </div>
                 </div>
               </div>
-              {userEmail ? <DiagChat lang={lang} email={userEmail} /> : <AuthGate lang={lang} />}
+              {userEmail ? <DiagChat lang={lang} email={userEmail} /> : <AuthGate lang={lang} google={google} />}
             </div>
           </div>
         </section>
@@ -414,7 +414,7 @@ export function Landing({ userEmail }: { userEmail?: string | null }) {
 /* ============================================================
    Portón de acceso — Google + email/contraseña
    ============================================================ */
-function AuthGate({ lang }: { lang: Idioma }) {
+function AuthGate({ lang, google = true }: { lang: Idioma; google?: boolean }) {
   const d = T[lang].diag;
   const [tab, setTab] = useState<"signup" | "login">("signup");
   const [nombre, setNombre] = useState("");
@@ -463,11 +463,15 @@ function AuthGate({ lang }: { lang: Idioma }) {
       <div style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 19 }}>{d.authTitulo}</div>
       <p style={{ marginTop: 4, fontSize: 14, color: "var(--dim)" }}>{d.authSub}</p>
 
-      <button className="gbtn" onClick={() => signIn("google", { callbackUrl: "/#diagnostico" })}>
-        <GoogleIcon /> <span>{d.googleBtn}</span>
-      </button>
+      {google && (
+        <>
+          <button className="gbtn" onClick={() => signIn("google", { callbackUrl: "/#diagnostico" })}>
+            <GoogleIcon /> <span>{d.googleBtn}</span>
+          </button>
 
-      <div className="sep"><span /><em>{d.orSep}</em><span /></div>
+          <div className="sep"><span /><em>{d.orSep}</em><span /></div>
+        </>
+      )}
 
       <div className="tabs" role="tablist">
         {(["signup", "login"] as const).map((x) => (

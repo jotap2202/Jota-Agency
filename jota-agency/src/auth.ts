@@ -4,18 +4,25 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { envLimpio, googleConfigurado } from "@/lib/config-auth";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   trustHost: true, // necesario detrás del proxy de Vercel / dominios propios
   session: { strategy: "jwt" },
-  pages: { signIn: "/acceder" },
+  pages: { signIn: "/acceder", error: "/acceder" },
   providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
+    // Google se suma solo si sus credenciales están cargadas: si faltan, el
+    // proveedor rompería todo el login (incluido el de email y contraseña).
+    ...(googleConfigurado()
+      ? [
+          Google({
+            clientId: envLimpio("AUTH_GOOGLE_ID"),
+            clientSecret: envLimpio("AUTH_GOOGLE_SECRET"),
+            allowDangerousEmailAccountLinking: true,
+          }),
+        ]
+      : []),
     Credentials({
       credentials: { email: {}, password: {} },
       authorize: async (creds) => {
