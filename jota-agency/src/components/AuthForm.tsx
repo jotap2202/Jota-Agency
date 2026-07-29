@@ -15,7 +15,7 @@ const GoogleIcon = () => (
 const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none";
 const inputStyle = { background: "var(--panel-soft)", border: "1px solid var(--line)", color: "var(--text)" } as const;
 
-export function AuthForm({ next = "/diagnostico" }: { next?: string }) {
+export function AuthForm({ next = "/diagnostico", google = true }: { next?: string; google?: boolean }) {
   const [tab, setTab] = useState<"signup" | "login">("signup");
   const [nombre, setNombre] = useState("");
   const [empresa, setEmpresa] = useState("");
@@ -72,19 +72,23 @@ export function AuthForm({ next = "/diagnostico" }: { next?: string }) {
         </div>
       </div>
 
-      <button
-        onClick={() => signIn("google", { callbackUrl: next })}
-        className="w-full flex items-center justify-center gap-2.5 rounded-xl px-4 py-3 text-sm font-semibold"
-        style={{ background: "#fff", color: "#1f2328", border: "1px solid #dadce0" }}
-      >
-        <GoogleIcon /> Continuar con Google
-      </button>
+      {google && (
+        <>
+          <button
+            onClick={() => signIn("google", { callbackUrl: next })}
+            className="w-full flex items-center justify-center gap-2.5 rounded-xl px-4 py-3 text-sm font-semibold"
+            style={{ background: "#fff", color: "#1f2328", border: "1px solid #dadce0" }}
+          >
+            <GoogleIcon /> Continuar con Google
+          </button>
 
-      <div className="flex items-center gap-3 my-4 text-xs" style={{ color: "var(--dim)" }}>
-        <span className="flex-1 h-px" style={{ background: "var(--line)" }} />
-        <span className="font-mono uppercase" style={{ letterSpacing: "0.12em" }}>o con tu email</span>
-        <span className="flex-1 h-px" style={{ background: "var(--line)" }} />
-      </div>
+          <div className="flex items-center gap-3 my-4 text-xs" style={{ color: "var(--dim)" }}>
+            <span className="flex-1 h-px" style={{ background: "var(--line)" }} />
+            <span className="font-mono uppercase" style={{ letterSpacing: "0.12em" }}>o con tu email</span>
+            <span className="flex-1 h-px" style={{ background: "var(--line)" }} />
+          </div>
+        </>
+      )}
 
       <div className="flex gap-1.5 rounded-xl p-1 mb-4" style={{ background: "var(--panel-soft)", border: "1px solid var(--line)" }} role="tablist">
         {(["signup", "login"] as const).map((t) => (
