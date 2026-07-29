@@ -45,6 +45,18 @@ La API de diagnóstico usa el modelo `claude-opus-4-8` (el más capaz). Para un 
 público y de alto volumen podés bajar costo cambiándolo por `claude-haiku-4-5` en
 `src/app/api/diagnostico/route.ts` (línea del `model`).
 
+## Panel de leads (`/panel`)
+
+Pantalla privada para ver quién se registró y qué le consultó a J:
+números del mes, tabla de contactos con buscador, las últimas consultas y
+un botón para **descargar todo en Excel**.
+
+- Se entra desde el logo **J** del pie de página, o directo en `tudominio.com/panel`.
+- **Quién puede entrar:** por defecto solo el dueño. Para cambiarlo o sumar
+  gente, definí `ADMIN_EMAILS` en Vercel separando con comas:
+  `ADMIN_EMAILS="vos@jota.agency,socio@jota.agency"`
+- A cualquier otro usuario logueado le aparece un aviso de que es privado.
+
 ## Ver / exportar los leads
 Los datos quedan en las tablas `User` y `Diagnostico`. Para inspeccionarlos:
 
