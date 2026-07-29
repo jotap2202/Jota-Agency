@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
-import { T, type Idioma } from "@/lib/contenido";
+import { T, EMAIL_CONTACTO, type Idioma } from "@/lib/contenido";
+
+/** Link de mail con el asunto ya escrito, para que la consulta llegue ordenada. */
+const mailto = (asunto: string) => `mailto:${EMAIL_CONTACTO}?subject=${encodeURIComponent(asunto)}`;
 
 const IMG_HERO = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1800&q=80";
 const IMG_1 = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1400&q=80";
@@ -385,7 +388,11 @@ export function Landing({ userEmail }: { userEmail?: string | null }) {
           <div className="reveal" style={{ marginTop: 32 }}>
             <a href="#diagnostico" className="btn-gold">{t.cierre.cta} <span aria-hidden>→</span></a>
           </div>
-          <p className="reveal mono" style={{ marginTop: 20, fontSize: 12, color: "var(--dim)" }}>{t.cierre.nota}</p>
+          <p className="reveal" style={{ marginTop: 20, fontSize: 14, color: "var(--dim)" }}>
+            {t.cierre.oEscribinos}{" "}
+            <a href={mailto(t.asuntoMail)} style={{ color: "var(--gold)", textDecoration: "underline" }}>{EMAIL_CONTACTO}</a>
+          </p>
+          <p className="reveal mono" style={{ marginTop: 12, fontSize: 12, color: "var(--dim)" }}>{t.cierre.nota}</p>
         </section>
       </main>
 
@@ -394,6 +401,7 @@ export function Landing({ userEmail }: { userEmail?: string | null }) {
           <div className="foot-big" aria-hidden>JOTA</div>
           <div className="foot-row">
             <span className="badge" aria-hidden>J</span>
+            <a href={mailto(t.asuntoMail)} className="mono" style={{ color: "var(--gold)", fontSize: 13 }}>{EMAIL_CONTACTO}</a>
             <span className="mono">{t.footer}</span>
           </div>
         </div>
@@ -587,7 +595,7 @@ function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
 
           {!cargando && (
             <div style={{ marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-              <a href="mailto:hola@jota.agency?subject=Quiero%20agendar%20la%20llamada%20de%2015%20min" className="btn-gold">
+              <a href={mailto(T[lang].asuntoMail)} className="btn-gold">
                 {d.ctaLlamada} <span aria-hidden>→</span>
               </a>
               <button onClick={() => { setResultado(null); setDesc(""); setEsDemo(false); }} style={{ fontSize: 14, color: "var(--dim)", textDecoration: "underline", background: "none", border: "none" }}>

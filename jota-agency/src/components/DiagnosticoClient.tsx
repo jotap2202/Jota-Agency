@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { EMAIL_CONTACTO } from "@/lib/contenido";
 
 export function DiagnosticoClient({ email }: { email?: string | null }) {
   const [desc, setDesc] = useState("");
@@ -82,7 +83,7 @@ export function DiagnosticoClient({ email }: { email?: string | null }) {
           </div>
           <p className="mt-4 text-sm whitespace-pre-wrap" aria-live="polite" style={{ lineHeight: 1.8 }}>{resultado}</p>
           <div className="mt-6 flex gap-3 flex-wrap items-center">
-            <a href="mailto:hola@jota.agency?subject=Quiero%20agendar%20la%20llamada%20de%2015%20min" className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold gold-grad" style={{ color: "var(--gold-dark)" }}>
+            <a href={`mailto:${EMAIL_CONTACTO}?subject=${encodeURIComponent("Quiero agendar la llamada de 15 min")}`} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold gold-grad" style={{ color: "var(--gold-dark)" }}>
               Agendar llamada de 15 min <span aria-hidden>→</span>
             </a>
             <button onClick={() => { setResultado(null); setDesc(""); }} className="text-sm underline" style={{ color: "var(--dim)" }}>Hacer otro diagnóstico</button>
