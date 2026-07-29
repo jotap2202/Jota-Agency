@@ -1,5 +1,8 @@
 export type Idioma = "es" | "en";
 
+/** Mail de contacto de la agencia. Cambiándolo acá se actualiza en toda la web. */
+export const EMAIL_CONTACTO = "hola@jota.agency";
+
 export type Contenido = {
   skip: string;
   nav: { servicios: string; proceso: string; diagnostico: string; cta: string };
@@ -53,9 +56,10 @@ export type Contenido = {
     ctaLlamada: string;
     errorConexion: string;
   };
-  cierre: { lineas: string[]; sub: string; cta: string; nota: string };
+  cierre: { lineas: string[]; sub: string; cta: string; nota: string; oEscribinos: string };
   footer: string;
   salir: string;
+  asuntoMail: string;
 };
 
 export const T: Record<Idioma, Contenido> = {
@@ -163,9 +167,11 @@ export const T: Record<Idioma, Contenido> = {
       sub: "Una llamada de 15 minutos alcanza para saber si podemos ayudarte. Sin compromiso.",
       cta: "Agendar llamada de 15 min",
       nota: "Respondemos en el día, en español o inglés.",
+      oEscribinos: "o escribinos a",
     },
     footer: "Generación de clientes B2B · Español / English",
     salir: "Salir",
+    asuntoMail: "Consulta desde la web de JOTA agency",
   },
   en: {
     skip: "Skip to content",
@@ -271,8 +277,10 @@ export const T: Record<Idioma, Contenido> = {
       sub: "A 15-minute call is enough to know if we can help. No commitment.",
       cta: "Book a 15-min call",
       nota: "We reply the same day, in Spanish or English.",
+      oEscribinos: "or write to us at",
     },
     footer: "B2B client generation · Español / English",
     salir: "Sign out",
+    asuntoMail: "Enquiry from the JOTA agency website",
   },
 };
