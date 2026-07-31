@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { T, EMAIL_CONTACTO, type Idioma } from "@/lib/contenido";
 import { CompletarEmpresa } from "@/components/CompletarEmpresa";
+import { useAuthSubmit } from "@/lib/useAuthSubmit";
 
 /** Link de mail con el asunto ya escrito, para que la consulta llegue ordenada. */
 const mailto = (asunto: string) => `mailto:${EMAIL_CONTACTO}?subject=${encodeURIComponent(asunto)}`;
@@ -103,6 +104,8 @@ export function Landing({
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let ctx: { revert: () => void } | undefined;
     let cancelled = false;
+    let refreshFn: (() => void) | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     (async () => {
       const [{ default: gsap }, { ScrollTrigger }] = await Promise.all([
@@ -140,14 +143,16 @@ export function Landing({
         });
       }, rootRef);
 
-      const refresh = () => ScrollTrigger.refresh();
-      window.addEventListener("load", refresh);
-      setTimeout(refresh, 400);
+      refreshFn = () => ScrollTrigger.refresh();
+      window.addEventListener("load", refreshFn);
+      timeoutId = setTimeout(refreshFn, 400);
     })();
 
     return () => {
       cancelled = true;
       ctx?.revert();
+      if (refreshFn) window.removeEventListener("load", refreshFn);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 
@@ -438,47 +443,23 @@ export function Landing({
    ============================================================ */
 function AuthGate({ lang, google = true }: { lang: Idioma; google?: boolean }) {
   const d = T[lang].diag;
-  const [tab, setTab] = useState<"signup" | "login">("signup");
-  const [nombre, setNombre] = useState("");
-  const [empresa, setEmpresa] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(false);
-  const isSignup = tab === "signup";
-
-  const submit = async () => {
-    setError(null);
-    const e = email.trim().toLowerCase();
-    if (!e.includes("@") || !e.includes(".")) return setError(d.emailError);
-    if (password.length < 6) return setError(d.passError);
-    if (isSignup && (!nombre.trim() || !empresa.trim())) return setError(d.regError);
-
-    setCargando(true);
-    try {
-      if (isSignup) {
-        const res = await fetch("/api/registro", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: nombre.trim(), empresa: empresa.trim(), email: e, password }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setCargando(false);
-          return setError(data.error || d.loginError);
-        }
-      }
-      const result = await signIn("credentials", { email: e, password, redirect: false });
-      if (result?.error) {
-        setCargando(false);
-        return setError(d.loginError);
-      }
-      window.location.href = "/#diagnostico";
-    } catch {
-      setCargando(false);
-      setError(T[lang].diag.errorConexion);
-    }
-  };
+  const {
+    tab, setTab, isSignup,
+    nombre, setNombre,
+    empresa, setEmpresa,
+    email, setEmail,
+    password, setPassword,
+    error, setError,
+    cargando,
+    submit,
+  } = useAuthSubmit({
+    email: d.emailError,
+    password: d.passError,
+    campos: d.regError,
+    login: d.loginError,
+    cuentaCreadaSinLogin: d.loginError,
+    conexion: d.errorConexion,
+  });
 
   return (
     <>
@@ -516,12 +497,12 @@ function AuthGate({ lang, google = true }: { lang: Idioma; google?: boolean }) {
         <input id="g-email" className="jfield" type="email" inputMode="email" autoComplete="email" placeholder={d.regEmail} value={email} onChange={(e) => setEmail(e.target.value)} />
         <label htmlFor="g-pass" className="sr-only">{d.regPass}</label>
         <input id="g-pass" className="jfield" type="password" autoComplete={isSignup ? "new-password" : "current-password"} placeholder={d.regPass}
-          value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
+          value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") submit("/#diagnostico"); }} />
       </div>
 
       {error && <p className="err" role="alert">{error}</p>}
 
-      <button className="send" style={{ width: "100%" }} onClick={submit} disabled={cargando}>
+      <button className="send" style={{ width: "100%" }} onClick={() => submit("/#diagnostico")} disabled={cargando}>
         {cargando ? "…" : isSignup ? d.signupBtn : d.loginBtn} →
       </button>
 
@@ -540,10 +521,14 @@ function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
   const [cargando, setCargando] = useState(false);
   const [esDemo, setEsDemo] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Guard sincrónico: un doble-click rápido puede disparar pedir() dos veces
+  // antes de que React repinte `cargando` (ver hallazgo G2 de la ronda 3).
+  const enVueloRef = useRef(false);
 
   const pedir = async () => {
     const consulta = desc.trim();
-    if (!consulta || cargando) return;
+    if (!consulta || enVueloRef.current) return;
+    enVueloRef.current = true;
     setCargando(true);
     setError(null);
     setResultado(null);
@@ -579,6 +564,7 @@ function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
       setResultado(null);
       setError(e instanceof Error ? e.message : d.errorConexion);
     } finally {
+      enVueloRef.current = false;
       setCargando(false);
     }
   };

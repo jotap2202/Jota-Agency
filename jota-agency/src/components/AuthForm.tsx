@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { useAuthSubmit } from "@/lib/useAuthSubmit";
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -16,48 +16,23 @@ const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none";
 const inputStyle = { background: "var(--panel-soft)", border: "1px solid var(--line)", color: "var(--text)" } as const;
 
 export function AuthForm({ next = "/diagnostico", google = true }: { next?: string; google?: boolean }) {
-  const [tab, setTab] = useState<"signup" | "login">("signup");
-  const [nombre, setNombre] = useState("");
-  const [empresa, setEmpresa] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(false);
-
-  const isSignup = tab === "signup";
-
-  const submit = async () => {
-    setError(null);
-    const e = email.trim().toLowerCase();
-    if (!e.includes("@") || !e.includes(".")) return setError("Ingresá un email válido.");
-    if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
-    if (isSignup && (!nombre.trim() || !empresa.trim())) return setError("Completá nombre y empresa.");
-
-    setCargando(true);
-    try {
-      if (isSignup) {
-        const res = await fetch("/api/registro", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: nombre.trim(), empresa: empresa.trim(), email: e, password }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setCargando(false);
-          return setError(data.error || "No pudimos crear la cuenta.");
-        }
-      }
-      const result = await signIn("credentials", { email: e, password, redirect: false });
-      if (result?.error) {
-        setCargando(false);
-        return setError(isSignup ? "Cuenta creada, pero no pudimos entrar. Probá iniciar sesión." : "Email o contraseña incorrectos.");
-      }
-      window.location.href = next;
-    } catch {
-      setCargando(false);
-      setError("Algo salió mal. Probá de nuevo.");
-    }
-  };
+  const {
+    tab, setTab, isSignup,
+    nombre, setNombre,
+    empresa, setEmpresa,
+    email, setEmail,
+    password, setPassword,
+    error, setError,
+    cargando,
+    submit,
+  } = useAuthSubmit({
+    email: "Ingresá un email válido.",
+    password: "La contraseña debe tener al menos 6 caracteres.",
+    campos: "Completá nombre y empresa.",
+    login: "Email o contraseña incorrectos.",
+    cuentaCreadaSinLogin: "Cuenta creada, pero no pudimos entrar. Probá iniciar sesión.",
+    conexion: "Algo salió mal. Probá de nuevo.",
+  });
 
   return (
     <div className="rounded-3xl p-6" style={{ background: "rgba(15,36,41,0.85)", border: "1px solid var(--line)", boxShadow: "0 30px 80px rgba(0,0,0,0.45)" }}>
@@ -112,12 +87,12 @@ export function AuthForm({ next = "/diagnostico", google = true }: { next?: stri
         <label htmlFor="af-email" className="sr-only">Tu email</label>
         <input id="af-email" className={inputCls} style={inputStyle} type="email" autoComplete="email" inputMode="email" placeholder="Tu email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <label htmlFor="af-pass" className="sr-only">Contraseña</label>
-        <input id="af-pass" className={inputCls} style={inputStyle} type="password" autoComplete={isSignup ? "new-password" : "current-password"} placeholder="Contraseña (mín. 6)" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
+        <input id="af-pass" className={inputCls} style={inputStyle} type="password" autoComplete={isSignup ? "new-password" : "current-password"} placeholder="Contraseña (mín. 6)" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") submit(next); }} />
       </div>
 
       {error && <p className="mt-3 text-sm" role="alert" style={{ color: "var(--red)" }}>{error}</p>}
 
-      <button onClick={submit} disabled={cargando} className="mt-5 w-full rounded-full px-6 py-3 text-sm font-semibold gold-grad" style={{ color: "var(--gold-dark)", opacity: cargando ? 0.6 : 1 }}>
+      <button onClick={() => submit(next)} disabled={cargando} className="mt-5 w-full rounded-full px-6 py-3 text-sm font-semibold gold-grad" style={{ color: "var(--gold-dark)", opacity: cargando ? 0.6 : 1 }}>
         {cargando ? "Un momento…" : isSignup ? "Crear cuenta y ver diagnóstico" : "Entrar y ver diagnóstico"} →
       </button>
 
