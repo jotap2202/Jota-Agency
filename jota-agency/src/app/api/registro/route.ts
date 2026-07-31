@@ -1,7 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { limitar } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "sin-ip";
+  const { permitido, reintentarEnSeg } = limitar(`registro:${ip}`, 5, 10 * 60 * 1000);
+  if (!permitido) {
+    return Response.json(
+      { error: "Demasiados intentos. Probá de nuevo en unos minutos." },
+      { status: 429, headers: { "Retry-After": String(reintentarEnSeg) } },
+    );
+  }
+
   let body: { name?: string; email?: string; empresa?: string; password?: string };
   try {
     body = await req.json();

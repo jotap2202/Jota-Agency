@@ -22,10 +22,23 @@ const mono = IBM_Plex_Mono({
   display: "swap",
 });
 
+const TITULO = "JOTA agency — Generación de clientes B2B";
+const DESCRIPCION =
+  "Nos dedicamos a una sola cosa: conseguirte clientes. Reuniones calificadas en tu agenda, todos los meses.";
+
 export const metadata: Metadata = {
-  title: "JOTA agency — Generación de clientes B2B",
-  description:
-    "Nos dedicamos a una sola cosa: conseguirte clientes. Reuniones calificadas en tu agenda, todos los meses.",
+  metadataBase: new URL("https://jota-agency.vercel.app"),
+  title: TITULO,
+  description: DESCRIPCION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: TITULO,
+    description: DESCRIPCION,
+    url: "/",
+    siteName: "JOTA agency",
+    locale: "es_AR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,0 +1,12 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="JOTA agency">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0c75e" />
+      <stop offset="55%" stop-color="#e3b341" />
+      <stop offset="100%" stop-color="#c99427" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#0d2a30" />
+  <rect x="8" y="8" width="48" height="48" rx="12" fill="url(#g)" />
+  <text x="32" y="43" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="30" text-anchor="middle" fill="#171204">J</text>
+</svg>
