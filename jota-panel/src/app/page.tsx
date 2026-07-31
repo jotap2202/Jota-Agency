@@ -13,15 +13,17 @@ const diasAtras = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 export default async function PanelPage() {
   if (!(await haySesion())) redirect("/login");
 
-  const [leads, totalDiag, leadsSemana, ultimos] = await Promise.all([
+  const LIMITE_LEADS = 500;
+  const [leads, totalLeads, totalDiag, leadsSemana, ultimos] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
-      take: 500,
+      take: LIMITE_LEADS,
       select: {
         id: true, name: true, email: true, empresa: true, password: true, createdAt: true,
         _count: { select: { diagnosticos: true } },
       },
     }),
+    prisma.user.count(),
     prisma.diagnostico.count(),
     prisma.user.count({ where: { createdAt: { gte: diasAtras(7) } } }),
     prisma.diagnostico.findMany({
@@ -30,9 +32,10 @@ export default async function PanelPage() {
       select: { id: true, consulta: true, createdAt: true, idioma: true, user: { select: { name: true, empresa: true, email: true } } },
     }),
   ]);
+  const truncado = totalLeads > leads.length;
 
   const stats = [
-    { n: leads.length, label: "Leads capturados" },
+    { n: totalLeads, label: "Leads capturados" },
     { n: leadsSemana, label: "Nuevos esta semana" },
     { n: totalDiag, label: "Diagnósticos pedidos" },
   ];
@@ -74,6 +77,11 @@ export default async function PanelPage() {
             <div className="eyebrow" style={{ marginBottom: 20 }}>
               <span className="l" /><span className="t">Contactos</span>
             </div>
+            {truncado && (
+              <p role="status" style={{ marginBottom: 16, fontSize: 13, color: "var(--gold)" }}>
+                Mostrando los últimos {LIMITE_LEADS} de {totalLeads} leads totales. Descargá el Excel para ver la lista completa.
+              </p>
+            )}
             <PanelBusqueda
               leads={leads.map((l) => ({
                 id: l.id,

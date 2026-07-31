@@ -5,6 +5,7 @@ import { signIn, signOut } from "next-auth/react";
 import { T, EMAIL_CONTACTO, type Idioma } from "@/lib/contenido";
 import { CompletarEmpresa } from "@/components/CompletarEmpresa";
 import { useAuthSubmit } from "@/lib/useAuthSubmit";
+import { useDiagnostico } from "@/lib/useDiagnostico";
 
 /** Link de mail con el asunto ya escrito, para que la consulta llegue ordenada. */
 const mailto = (asunto: string) => `mailto:${EMAIL_CONTACTO}?subject=${encodeURIComponent(asunto)}`;
@@ -486,58 +487,8 @@ function AuthGate({ lang, google = true }: { lang: Idioma; google?: boolean }) {
    ============================================================ */
 function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
   const d = T[lang].diag;
-  const [desc, setDesc] = useState("");
-  const [resultado, setResultado] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(false);
-  const [esDemo, setEsDemo] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // Guard sincrónico: un doble-click rápido puede disparar pedir() dos veces
-  // antes de que React repinte `cargando` (ver hallazgo G2 de la ronda 3).
-  const enVueloRef = useRef(false);
-
-  const pedir = async () => {
-    const consulta = desc.trim();
-    if (!consulta || enVueloRef.current) return;
-    enVueloRef.current = true;
-    setCargando(true);
-    setError(null);
-    setResultado(null);
-    setEsDemo(false);
-    try {
-      const res = await fetch("/api/diagnostico", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ consulta, idioma: lang }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || d.errorConexion);
-      }
-
-      setEsDemo(res.headers.get("X-Diagnostico-Modo") === "demo");
-
-      // J va escribiendo: mostramos el texto a medida que llega
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error(d.errorConexion);
-      const decoder = new TextDecoder();
-      let acumulado = "";
-      setResultado("");
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        acumulado += decoder.decode(value, { stream: true });
-        setResultado(acumulado);
-      }
-      if (!acumulado.trim()) throw new Error(d.errorConexion);
-    } catch (e) {
-      setResultado(null);
-      setError(e instanceof Error ? e.message : d.errorConexion);
-    } finally {
-      enVueloRef.current = false;
-      setCargando(false);
-    }
-  };
+  const { desc, setDesc, resultado, cargando, esDemo, error, pedir, reiniciar } =
+    useDiagnostico(lang, { error: d.errorConexion });
 
   return (
     <>
@@ -581,7 +532,7 @@ function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
               <a href={mailto(T[lang].asuntoMail)} className="btn-gold">
                 {d.ctaLlamada} <span aria-hidden>→</span>
               </a>
-              <button onClick={() => { setResultado(null); setDesc(""); setEsDemo(false); }} style={{ fontSize: 14, color: "var(--dim)", textDecoration: "underline", background: "none", border: "none" }}>
+              <button onClick={reiniciar} style={{ fontSize: 14, color: "var(--dim)", textDecoration: "underline", background: "none", border: "none" }}>
                 {d.denuevo}
               </button>
             </div>

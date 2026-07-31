@@ -1,50 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { EMAIL_CONTACTO } from "@/lib/contenido";
+import { useDiagnostico } from "@/lib/useDiagnostico";
 
 export function DiagnosticoClient({ email }: { email?: string | null }) {
-  const [desc, setDesc] = useState("");
-  const [resultado, setResultado] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const pedir = async () => {
-    const consulta = desc.trim();
-    if (!consulta || cargando) return;
-    setCargando(true);
-    setError(null);
-    setResultado(null);
-    try {
-      const res = await fetch("/api/diagnostico", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ consulta, idioma: "es" }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Error");
-      }
-      // J va escribiendo: mostramos el texto a medida que llega
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("Error");
-      const decoder = new TextDecoder();
-      let acumulado = "";
-      setResultado("");
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        acumulado += decoder.decode(value, { stream: true });
-        setResultado(acumulado);
-      }
-      if (!acumulado.trim()) throw new Error("Error");
-    } catch (e) {
-      setResultado(null);
-      setError(e instanceof Error ? e.message : "No pude conectar con J. Probá de nuevo.");
-    } finally {
-      setCargando(false);
-    }
-  };
+  const { desc, setDesc, resultado, cargando, esDemo, error, pedir, reiniciar } =
+    useDiagnostico("es", { error: "No pude conectar con J. Probá de nuevo." });
 
   return (
     <div className="rounded-3xl p-6" style={{ background: "rgba(15,36,41,0.85)", border: "1px solid var(--line)", boxShadow: "0 30px 80px rgba(0,0,0,0.45)" }}>
@@ -82,11 +43,18 @@ export function DiagnosticoClient({ email }: { email?: string | null }) {
             <span className="font-mono text-[11px] uppercase" style={{ color: "var(--gold)", letterSpacing: "0.22em" }}>Diagnóstico de J</span>
           </div>
           <p className="mt-4 text-sm whitespace-pre-wrap" aria-live="polite" style={{ lineHeight: 1.8 }}>{resultado}</p>
+
+          {esDemo && (
+            <p className="mt-3 text-xs" role="status" style={{ color: "var(--dim)" }}>
+              ⚠︎ Modo demo: falta configurar ANTHROPIC_API_KEY en Vercel. Con la clave, J genera un diagnóstico único para cada visitante.
+            </p>
+          )}
+
           <div className="mt-6 flex gap-3 flex-wrap items-center">
             <a href={`mailto:${EMAIL_CONTACTO}?subject=${encodeURIComponent("Quiero agendar la llamada de 15 min")}`} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold gold-grad" style={{ color: "var(--gold-dark)" }}>
               Agendar llamada de 15 min <span aria-hidden>→</span>
             </a>
-            <button onClick={() => { setResultado(null); setDesc(""); }} className="text-sm underline" style={{ color: "var(--dim)" }}>Hacer otro diagnóstico</button>
+            <button onClick={reiniciar} className="text-sm underline" style={{ color: "var(--dim)" }}>Hacer otro diagnóstico</button>
           </div>
         </>
       )}
