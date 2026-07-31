@@ -7,7 +7,11 @@ import { revisarClientId, revisarClientSecret, revisarAuthSecret, envLimpio } fr
 import { CopiarUri } from "@/components/CopiarUri";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Estado del login — JOTA agency", robots: { index: false, follow: false } };
+export const metadata = {
+  title: "Estado del login — JOTA agency",
+  robots: { index: false, follow: false },
+  alternates: { canonical: "/acceder/estado" },
+};
 
 const panel = { background: "var(--panel)", border: "1px solid var(--line)" } as const;
 

@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/panel", "/acceder/estado", "/api/"],
+      disallow: ["/panel", "/acceder", "/diagnostico", "/api/"],
     },
     host: "https://jota-agency.vercel.app",
   };

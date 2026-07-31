@@ -343,36 +343,6 @@ export function Landing({
           </div>
         </section>
 
-        {/* ---------------- TESTIMONIOS ---------------- */}
-        <section>
-          <div className="wrap">
-            <div className="reveal"><div className="eyebrow center"><span className="l" /><span className="t">{t.testCap}</span></div></div>
-            <div className="reveal">
-              <h2 style={{ textAlign: "center", marginTop: 20, maxWidth: "42rem", marginLeft: "auto", marginRight: "auto", fontSize: "clamp(28px,4.4vw,44px)", lineHeight: 1.15, letterSpacing: "-.025em" }}>{t.testTitulo}</h2>
-            </div>
-            <div className="reveal">
-              <p style={{ textAlign: "center", marginTop: 12, fontSize: 14, color: "var(--dim)", maxWidth: "32rem", marginLeft: "auto", marginRight: "auto", lineHeight: 1.7 }}>{t.testSub}</p>
-            </div>
-            <div className="tgrid">
-              {t.testimonios.map((x, i) => (
-                <div className="reveal" key={`${lang}-${i}`} style={{ animationDelay: `${i * 120}ms` }}>
-                  <figure className="tcard">
-                    <div className="quote" aria-hidden>“</div>
-                    <blockquote>{x.q}</blockquote>
-                    <figcaption>
-                      <span className="av" aria-hidden>{x.quien.trim().charAt(0)}</span>
-                      <span>
-                        <span className="who">{x.quien}</span>
-                        <span className="role">{x.rol}</span>
-                      </span>
-                    </figcaption>
-                  </figure>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ---------------- DIAGNÓSTICO (con portón de acceso) ---------------- */}
         <section id="diagnostico" className="diag" style={{ paddingTop: 96, paddingBottom: 96 }}>
           <div className="glow" aria-hidden />

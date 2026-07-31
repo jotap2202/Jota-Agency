@@ -6,7 +6,11 @@ import { esAdmin } from "@/lib/admin";
 import { PanelBusqueda } from "@/components/PanelBusqueda";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Panel de leads — JOTA agency", robots: { index: false, follow: false } };
+export const metadata = {
+  title: "Panel de leads — JOTA agency",
+  robots: { index: false, follow: false },
+  alternates: { canonical: "/panel" },
+};
 
 const fecha = (d: Date) =>
   new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }).format(d);

@@ -5,6 +5,16 @@ import { DiagnosticoClient } from "@/components/DiagnosticoClient";
 import { CompletarEmpresa } from "@/components/CompletarEmpresa";
 import { faltaEmpresa } from "@/lib/perfil";
 
+export const dynamic = "force-dynamic";
+export const metadata = {
+  title: "Diagnóstico — JOTA agency",
+  // Contenido gateado: sin sesión siempre redirige a /acceder, así que no
+  // hay nada propio que indexar acá. Sin esto, heredaba el canonical "/" de
+  // la raíz, diciéndole a Google que esta URL "es" la home.
+  robots: { index: false, follow: false },
+  alternates: { canonical: "/diagnostico" },
+};
+
 export default async function DiagnosticoPage() {
   const session = await auth();
   if (!session?.user) redirect("/acceder?next=/diagnostico");

@@ -4,6 +4,15 @@ import { auth } from "@/auth";
 import { AuthForm } from "@/components/AuthForm";
 import { googleConfigurado } from "@/lib/config-auth";
 
+export const metadata = {
+  title: "Acceder — JOTA agency",
+  // Formulario de login/registro: sin contenido propio que indexar, y su
+  // contenido cambia según ?next=. Sin esto heredaba el canonical "/" de la
+  // raíz.
+  robots: { index: false, follow: false },
+  alternates: { canonical: "/acceder" },
+};
+
 /** Traduce los códigos de error de Auth.js a algo que se entienda. */
 const MENSAJES: Record<string, string> = {
   Configuration: "El acceso con Google no está bien configurado. Podés entrar con tu email y contraseña mientras tanto.",

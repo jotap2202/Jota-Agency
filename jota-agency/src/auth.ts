@@ -19,7 +19,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           Google({
             clientId: envLimpio("AUTH_GOOGLE_ID"),
             clientSecret: envLimpio("AUTH_GOOGLE_SECRET"),
-            allowDangerousEmailAccountLinking: true,
+            // NO activar allowDangerousEmailAccountLinking: el registro por
+            // contraseña (/api/registro) no verifica el email, así que
+            // alguien podría registrar tu email con SU contraseña antes que
+            // vos, y ese flag fusionaría tu login de Google (verificado) con
+            // esa cuenta — el atacante conservaría acceso. Sin el flag,
+            // Auth.js rechaza el login con OAuthAccountNotLinked, que
+            // /acceder ya traduce a un mensaje claro pidiendo entrar con
+            // contraseña. Ver .ai-review/jota-agency-round-3.md (G4).
           }),
         ]
       : []),
