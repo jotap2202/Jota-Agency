@@ -19,10 +19,6 @@ export type Contenido = {
   procTitulo: string;
   procSub: string;
   pasos: { titulo: string; desc: string }[];
-  testCap: string;
-  testTitulo: string;
-  testSub: string;
-  testimonios: { q: string; quien: string; rol: string }[];
   garantia: { cap: string; texto: string; firma: string };
   diag: {
     eyebrow: string;
@@ -120,15 +116,6 @@ export const T: Record<Idioma, Contenido> = {
       { titulo: "Diagnóstico", desc: "Contanos tu negocio (podés empezar ahora con J). Definimos juntos tu cliente ideal." },
       { titulo: "Sistema en marcha", desc: "En la primera semana armamos prospección, mensajes y automatización. Empezamos a contactar." },
       { titulo: "Reuniones en tu agenda", desc: "Recibís reuniones calificadas y un reporte semanal claro. Escalamos lo que funciona." },
-    ],
-    testCap: "Testimonios",
-    testTitulo: "Lo que dicen quienes ya trabajan con nosotros",
-    testSub: "Resultados reales de empresas que decidieron dejar de esperar a que las encuentren.",
-    // NOTA: testimonios de ejemplo. Reemplazá nombre, rol y texto por clientes reales.
-    testimonios: [
-      { q: "En dos meses pasamos de esperar recomendaciones a tener reuniones agendadas todas las semanas. El equipo solo se sienta con gente que ya quiere comprar.", quien: "Martín Gómez", rol: "Socio · Estudio contable" },
-      { q: "El agente que responde 24/7 nos cambió el negocio. Dejamos de perder consultas de noche y los fines de semana. Cada mensaje entra al sistema.", quien: "Carolina Suárez", rol: "Directora · Clínica" },
-      { q: "Antes nadie nos conocía. Hoy nos escriben a nosotros. La prospección y el LinkedIn del fundador nos pusieron en el radar de las empresas correctas.", quien: "Diego Ramírez", rol: "Fundador · Software B2B" },
     ],
     garantia: {
       cap: "Nuestra garantía",
@@ -235,15 +222,6 @@ export const T: Record<Idioma, Contenido> = {
       { titulo: "Diagnosis", desc: "Tell us about your business (start now with J). Together we define your ideal client." },
       { titulo: "System up and running", desc: "In the first week we build prospecting, messaging and automation. Outreach begins." },
       { titulo: "Meetings on your calendar", desc: "You get qualified meetings and a clear weekly report. We scale what works." },
-    ],
-    testCap: "Testimonials",
-    testTitulo: "What the companies working with us say",
-    testSub: "Real results from companies that stopped waiting to be found.",
-    // NOTE: placeholder testimonials. Replace name, role and text with real clients.
-    testimonios: [
-      { q: "In two months we went from waiting on referrals to booked meetings every week. The team only sits down with people who already want to buy.", quien: "James Miller", rol: "Partner · Accounting firm" },
-      { q: "The 24/7 agent changed our business. We stopped losing inquiries at night and on weekends. Every message goes into the system.", quien: "Sarah Bennett", rol: "Director · Clinic" },
-      { q: "Before, nobody knew us. Now they write to us. Prospecting and the founder's LinkedIn put us on the radar of the right companies.", quien: "David Reyes", rol: "Founder · B2B software" },
     ],
     garantia: {
       cap: "Our guarantee",
