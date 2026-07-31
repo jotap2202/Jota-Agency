@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { auth } from "@/auth";
+import { esAdmin } from "@/lib/admin";
 import { revisarClientId, revisarClientSecret, revisarAuthSecret, envLimpio } from "@/lib/config-auth";
 import { CopiarUri } from "@/components/CopiarUri";
 
@@ -21,6 +24,13 @@ function Fila({ titulo, ok, detalle }: { titulo: string; ok: boolean; detalle: s
 }
 
 export default async function EstadoLoginPage() {
+  // Página de diagnóstico interno: expone si las credenciales están cargadas
+  // (nunca su valor secreto) y el ID de cliente de Google en uso. No es apta
+  // para visitantes anónimos, así que se restringe igual que /panel.
+  const session = await auth();
+  if (!session?.user) redirect("/acceder?next=/acceder/estado");
+  if (!(await esAdmin(session.user.email))) redirect("/");
+
   const h = await headers();
   const host = h.get("x-forwarded-host") || h.get("host") || "";
   const proto = h.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
