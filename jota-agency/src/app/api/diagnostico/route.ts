@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { DIAG_PROMPT, DIAG_DEMO, type Idioma } from "@/lib/diagnostico";
+import { limitar } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -33,6 +34,19 @@ export async function POST(req: Request) {
   const idioma: Idioma = body.idioma === "en" ? "en" : "es";
   if (!consulta) {
     return Response.json({ error: "Contanos sobre tu negocio." }, { status: 400 });
+  }
+
+  const rl = limitar(`diagnostico:${userId}`, 8, 10 * 60 * 1000);
+  if (!rl.permitido) {
+    return Response.json(
+      {
+        error:
+          idioma === "en"
+            ? "Too many requests. Please try again in a few minutes."
+            : "Demasiadas consultas seguidas. Probá de nuevo en unos minutos.",
+      },
+      { status: 429, headers: { "Retry-After": String(rl.reintentarEnSeg) } },
+    );
   }
 
   const encoder = new TextEncoder();

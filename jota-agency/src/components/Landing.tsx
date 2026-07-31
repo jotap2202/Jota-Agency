@@ -12,6 +12,17 @@ const IMG_HERO = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?a
 const IMG_1 = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1400&q=80";
 const IMG_2 = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1400&q=80";
 
+/**
+ * Arma un srcset variando el ancho (w=) de una URL de Unsplash ya armada,
+ * para que un celular no baje la misma imagen que un monitor de escritorio.
+ */
+function unsplashSrcSet(url: string, anchos: number[]): string {
+  return anchos.map((w) => `${url.replace(/([?&])w=\d+/, `$1w=${w}`)} ${w}w`).join(", ");
+}
+const HERO_SRCSET = unsplashSrcSet(IMG_HERO, [800, 1200, 1800, 2400]);
+const FRAME_SRCSET_1 = unsplashSrcSet(IMG_1, [480, 768, 1000, 1400]);
+const FRAME_SRCSET_2 = unsplashSrcSet(IMG_2, [480, 768, 1000, 1400]);
+
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
@@ -176,7 +187,7 @@ export function Landing({
         <header className="hero">
           <div className="hero-bg" aria-hidden>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="hero-img" src={IMG_HERO} alt="" fetchPriority="high" decoding="async" />
+            <img className="hero-img" src={IMG_HERO} srcSet={HERO_SRCSET} sizes="100vw" alt="" fetchPriority="high" decoding="async" />
             <div className="hero-shade" />
           </div>
           <div className="hero-in">
@@ -251,7 +262,7 @@ export function Landing({
             <div className="reveal c2">
               <div className="frame">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="frame-img" src={IMG_1} alt="Un teléfono de noche: la consulta que espera respuesta" loading="lazy" decoding="async" />
+                <img className="frame-img" src={IMG_1} srcSet={FRAME_SRCSET_1} sizes="(max-width: 768px) 100vw, 50vw" alt="Un teléfono de noche: la consulta que espera respuesta" loading="lazy" decoding="async" />
                 <div className="ph">JOTA</div>
                 <div className="cap"><p>{t.manif.imgCap}</p></div>
               </div>
@@ -290,7 +301,7 @@ export function Landing({
             <div className="reveal c2" style={{ order: 2 }}>
               <div className="frame n2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="frame-img" src={IMG_2} alt="Un mundo conectado las 24 horas" loading="lazy" decoding="async" />
+                <img className="frame-img" src={IMG_2} srcSet={FRAME_SRCSET_2} sizes="(max-width: 768px) 100vw, 50vw" alt="Un mundo conectado las 24 horas" loading="lazy" decoding="async" />
                 <div className="ph">24/7</div>
                 <div className="cap"><p>{t.manif2.imgCap}</p></div>
               </div>
