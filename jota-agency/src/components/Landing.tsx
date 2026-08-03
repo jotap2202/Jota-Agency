@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
-import { T, EMAIL_CONTACTO, type Idioma } from "@/lib/contenido";
+import { T, EMAIL_CONTACTO, COOKIE_IDIOMA, IDIOMA_POR_DEFECTO, type Idioma } from "@/lib/contenido";
 import { CompletarEmpresa } from "@/components/CompletarEmpresa";
 import { useAuthSubmit } from "@/lib/useAuthSubmit";
 import { useDiagnostico } from "@/lib/useDiagnostico";
@@ -38,14 +38,20 @@ export function Landing({
   userEmail,
   google = true,
   faltaEmpresa = false,
-}: { userEmail?: string | null; google?: boolean; faltaEmpresa?: boolean }) {
-  const [lang, setLang] = useState<Idioma>("es");
+  langInicial = IDIOMA_POR_DEFECTO,
+}: { userEmail?: string | null; google?: boolean; faltaEmpresa?: boolean; langInicial?: Idioma }) {
+  // El servidor ya leyó la cookie y nos pasa el idioma: arrancamos con el
+  // mismo valor que renderizó, sin desajuste de hidratación ni parpadeo.
+  const [lang, setLang] = useState<Idioma>(langInicial);
   const rootRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const t = T[lang];
 
   useEffect(() => {
     document.documentElement.lang = lang;
+    // Guardamos la elección para que sobreviva a la navegación y para que
+    // /acceder y /diagnostico (que rendean en el servidor) la respeten.
+    document.cookie = `${COOKIE_IDIOMA}=${lang}; path=/; max-age=31536000; samesite=lax`;
   }, [lang]);
 
   /* ---------- animación de entrada + barra de progreso + nav ---------- */
@@ -176,8 +182,8 @@ export function Landing({
             <a href="#diagnostico">{t.nav.diagnostico}</a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div className="lang" role="group" aria-label="Idioma">
-              {(["es", "en"] as const).map((l) => (
+            <div className="lang" role="group" aria-label={lang === "es" ? "Idioma" : "Language"}>
+              {(["en", "es"] as const).map((l) => (
                 <button key={l} aria-pressed={lang === l} aria-label={l === "es" ? "Español" : "English"} onClick={() => setLang(l)}>
                   {l.toUpperCase()}
                 </button>
@@ -233,7 +239,7 @@ export function Landing({
         </header>
 
         {/* ---------------- STATS ---------------- */}
-        <section aria-label="Números clave">
+        <section aria-label={t.a11y.stats}>
           <div className="wrap stats">
             {t.stats.map((s, i) => (
               <div className="reveal stat" key={`${lang}-${i}`} style={{ animationDelay: `${i * 110}ms` }}>
@@ -268,7 +274,7 @@ export function Landing({
             <div className="reveal c2">
               <div className="frame">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="frame-img" src={IMG_1} srcSet={FRAME_SRCSET_1} sizes="(max-width: 768px) 100vw, 50vw" alt="Un teléfono de noche: la consulta que espera respuesta" loading="lazy" decoding="async" />
+                <img className="frame-img" src={IMG_1} srcSet={FRAME_SRCSET_1} sizes="(max-width: 768px) 100vw, 50vw" alt={t.a11y.imgNoche} loading="lazy" decoding="async" />
                 <div className="ph">JOTA</div>
                 <div className="cap"><p>{t.manif.imgCap}</p></div>
               </div>
@@ -307,7 +313,7 @@ export function Landing({
             <div className="reveal c2" style={{ order: 2 }}>
               <div className="frame n2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="frame-img" src={IMG_2} srcSet={FRAME_SRCSET_2} sizes="(max-width: 768px) 100vw, 50vw" alt="Un mundo conectado las 24 horas" loading="lazy" decoding="async" />
+                <img className="frame-img" src={IMG_2} srcSet={FRAME_SRCSET_2} sizes="(max-width: 768px) 100vw, 50vw" alt={t.a11y.imgMundo} loading="lazy" decoding="async" />
                 <div className="ph">24/7</div>
                 <div className="cap"><p>{t.manif2.imgCap}</p></div>
               </div>
@@ -399,7 +405,7 @@ export function Landing({
           <div className="foot-big" aria-hidden>JOTA</div>
           <div className="foot-row">
             {/* Acceso al panel de leads. Solo entra el equipo; al resto le avisa que es privado. */}
-            <a href="/panel" className="badge" title="Acceso al panel" aria-label="Acceso al panel de leads">J</a>
+            <a href="/panel" className="badge" title={t.a11y.panel} aria-label={t.a11y.panel}>J</a>
             <a href={mailto(t.asuntoMail)} className="mono" style={{ color: "var(--gold)", fontSize: 13 }}>{EMAIL_CONTACTO}</a>
             <span className="mono">{t.footer}</span>
           </div>

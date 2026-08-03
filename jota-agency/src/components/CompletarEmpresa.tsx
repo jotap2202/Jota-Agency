@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { T, type Idioma } from "@/lib/contenido";
+import { T, IDIOMA_POR_DEFECTO, type Idioma } from "@/lib/contenido";
 
 /**
  * Paso corto que aparece solo para quien entró con Google: pide la empresa,
  * el único dato del formulario de registro que Google no puede darnos.
  */
-export function CompletarEmpresa({ lang = "es", onListo }: { lang?: Idioma; onListo?: () => void }) {
+export function CompletarEmpresa({ lang = IDIOMA_POR_DEFECTO, onListo }: { lang?: Idioma; onListo?: () => void }) {
   const d = T[lang].diag;
   const [empresa, setEmpresa] = useState("");
   const [error, setError] = useState<string | null>(null);

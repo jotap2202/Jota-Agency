@@ -5,7 +5,7 @@ import { ImageResponse } from "next/og";
 // Los colores están hardcodeados porque el runtime de la imagen no lee
 // globals.css: son los mismos valores de :root (--bg, --gold, --gold-2, --dim).
 
-export const alt = "JOTA agency — Generación de clientes B2B";
+export const alt = "JOTA agency — B2B client generation";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -59,10 +59,10 @@ export default async function Image() {
               maxWidth: 940,
             }}
           >
-            Convertimos empresas desconocidas en empresas buscadas
+            We turn unknown companies into sought-after companies
           </div>
           <div style={{ color: "#8fb0ae", fontSize: 30, lineHeight: 1.4, maxWidth: 880 }}>
-            Reuniones calificadas en tu agenda, todos los meses.
+            Qualified meetings on your calendar, every month.
           </div>
         </div>
 
@@ -76,7 +76,7 @@ export default async function Image() {
               textTransform: "uppercase",
             }}
           >
-            Diagnóstico gratis con J
+            Free diagnosis with J
           </div>
         </div>
       </div>

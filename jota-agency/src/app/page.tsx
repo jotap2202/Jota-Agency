@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { Landing } from "@/components/Landing";
 import { googleConfigurado } from "@/lib/config-auth";
+import { idiomaActual } from "@/lib/idioma-servidor";
 import { faltaEmpresa } from "@/lib/perfil";
 
 export default async function Home() {
@@ -12,6 +13,7 @@ export default async function Home() {
       userEmail={email}
       google={googleConfigurado()}
       faltaEmpresa={await faltaEmpresa(email)}
+      langInicial={await idiomaActual()}
     />
   );
 }

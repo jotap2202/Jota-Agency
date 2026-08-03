@@ -1,13 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { limitar } from "@/lib/rate-limit";
+import { ERRORES } from "@/lib/errores-api";
+import { idiomaActual } from "@/lib/idioma-servidor";
 
 export async function POST(req: Request) {
+  const e = ERRORES[await idiomaActual()];
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "sin-ip";
   const { permitido, reintentarEnSeg } = limitar(`registro:${ip}`, 5, 10 * 60 * 1000);
   if (!permitido) {
     return Response.json(
-      { error: "Demasiados intentos. Probá de nuevo en unos minutos." },
+      { error: e.rateLimit },
       { status: 429, headers: { "Retry-After": String(reintentarEnSeg) } },
     );
   }
@@ -16,7 +19,7 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return Response.json({ error: "Cuerpo inválido" }, { status: 400 });
+    return Response.json({ error: e.cuerpo }, { status: 400 });
   }
 
   const name = String(body.name ?? "").trim();
@@ -25,15 +28,15 @@ export async function POST(req: Request) {
   const password = String(body.password ?? "");
 
   if (!name || !empresa || !email.includes("@") || !email.includes(".")) {
-    return Response.json({ error: "Completá nombre, email y empresa." }, { status: 400 });
+    return Response.json({ error: e.campos }, { status: 400 });
   }
   if (password.length < 6) {
-    return Response.json({ error: "La contraseña debe tener al menos 6 caracteres." }, { status: 400 });
+    return Response.json({ error: e.password }, { status: 400 });
   }
 
   const existe = await prisma.user.findUnique({ where: { email } });
   if (existe) {
-    return Response.json({ error: "Ya existe una cuenta con ese email. Probá entrar." }, { status: 409 });
+    return Response.json({ error: e.emailUsado }, { status: 409 });
   }
 
   await prisma.user.create({

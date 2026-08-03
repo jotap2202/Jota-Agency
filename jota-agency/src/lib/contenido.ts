@@ -1,5 +1,14 @@
 export type Idioma = "es" | "en";
 
+/**
+ * La web habla inglés por defecto; el castellano es la alternativa que el
+ * visitante elige con el toggle. La elección se guarda en esta cookie (y no
+ * en localStorage) para que las páginas renderizadas en el servidor
+ * —/acceder, /diagnostico— también puedan respetarla.
+ */
+export const IDIOMA_POR_DEFECTO: Idioma = "en";
+export const COOKIE_IDIOMA = "jota_lang";
+
 /** Mail de contacto de la agencia. Cambiándolo acá se actualiza en toda la web. */
 export const EMAIL_CONTACTO = "hola@jota.agency";
 
@@ -61,6 +70,8 @@ export type Contenido = {
   footer: string;
   salir: string;
   asuntoMail: string;
+  /** Textos que no se ven pero que lee un lector de pantalla. */
+  a11y: { stats: string; imgNoche: string; imgMundo: string; panel: string };
 };
 
 export const T: Record<Idioma, Contenido> = {
@@ -169,6 +180,12 @@ export const T: Record<Idioma, Contenido> = {
     footer: "Generación de clientes B2B · Español / English",
     salir: "Salir",
     asuntoMail: "Consulta desde la web de JOTA agency",
+    a11y: {
+      stats: "Números clave",
+      imgNoche: "Un teléfono de noche: la consulta que espera respuesta",
+      imgMundo: "Un mundo conectado las 24 horas",
+      panel: "Acceso al panel de leads",
+    },
   },
   en: {
     skip: "Skip to content",
@@ -275,5 +292,11 @@ export const T: Record<Idioma, Contenido> = {
     footer: "B2B client generation · Español / English",
     salir: "Sign out",
     asuntoMail: "Enquiry from the JOTA agency website",
+    a11y: {
+      stats: "Key numbers",
+      imgNoche: "A phone at night: the inquiry waiting for an answer",
+      imgMundo: "A world connected around the clock",
+      panel: "Leads panel access",
+    },
   },
 };
