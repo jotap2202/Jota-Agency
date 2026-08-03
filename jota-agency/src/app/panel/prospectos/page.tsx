@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { esAdmin } from "@/lib/admin";
 import { PROSPECTOS_MAUI } from "@/lib/prospectos-maui";
 import { ProspectosTabla, type ProspectoUI } from "@/components/ProspectosTabla";
+import { fechaISO } from "@/lib/zona";
 import { agregarProspecto, importarMaui } from "./acciones";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +14,6 @@ export const metadata = {
   robots: { index: false, follow: false },
   alternates: { canonical: "/panel/prospectos" },
 };
-
-/** YYYY-MM-DD en la zona horaria de Argentina, que es donde se trabaja. */
-const aISO = (d: Date) =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(d);
 
 const campo = {
   background: "var(--panel-soft)",
@@ -38,7 +35,7 @@ export default async function ProspectosPage() {
     take: 1000,
   });
 
-  const hoy = aISO(new Date());
+  const hoy = fechaISO(new Date());
   const filas: ProspectoUI[] = prospectos.map((p) => ({
     id: p.id,
     empresa: p.empresa,
@@ -49,7 +46,7 @@ export default async function ProspectosPage() {
     email: p.email ?? "",
     estado: p.estado,
     notas: p.notas ?? "",
-    proximo: p.proximoContacto ? aISO(p.proximoContacto) : "",
+    proximo: p.proximoContacto ? fechaISO(p.proximoContacto) : "",
   }));
 
   const sinContactar = filas.filter((p) => p.estado === "nuevo").length;

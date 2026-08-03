@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "JOTA agency",
     locale: "en_US",
-    alternateLocale: "es_AR",
+    alternateLocale: "es_US",
     type: "website",
   },
   // La imagen sale de app/opengraph-image.tsx; Twitter/X la reusa como
@@ -72,6 +72,11 @@ const JSON_LD = {
   email: EMAIL_CONTACTO,
   availableLanguage: ["en", "es"],
   serviceType: "B2B client generation",
+  // JOTA opera desde Maui y sus clientes están ahí: decírselo a Google es
+  // lo que hace que aparezca en búsquedas locales del rubro. Solo se afirma
+  // isla, estado y país — sin dirección postal, que no corresponde inventar.
+  areaServed: { "@type": "Place", name: "Maui, Hawaii" },
+  address: { "@type": "PostalAddress", addressRegion: "HI", addressCountry: "US" },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

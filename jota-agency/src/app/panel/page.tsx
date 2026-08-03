@@ -4,6 +4,7 @@ import { auth, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { esAdmin } from "@/lib/admin";
 import { PanelBusqueda } from "@/components/PanelBusqueda";
+import { fechaHora as fecha } from "@/lib/zona";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -11,9 +12,6 @@ export const metadata = {
   robots: { index: false, follow: false },
   alternates: { canonical: "/panel" },
 };
-
-const fecha = (d: Date) =>
-  new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }).format(d);
 
 const diasAtras = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 

@@ -2,11 +2,9 @@ import { redirect } from "next/navigation";
 import { haySesion, cerrarSesion } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PanelBusqueda } from "@/components/PanelBusqueda";
+import { fechaHora as fecha } from "@/lib/zona";
 
 export const dynamic = "force-dynamic";
-
-const fecha = (d: Date) =>
-  new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }).format(d);
 
 const diasAtras = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 
