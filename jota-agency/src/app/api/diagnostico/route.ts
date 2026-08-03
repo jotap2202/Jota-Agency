@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { DIAG_PROMPT, DIAG_DEMO, type Idioma } from "@/lib/diagnostico";
 import { limitar } from "@/lib/rate-limit";
+import { ERRORES } from "@/lib/errores-api";
+import { idiomaActual } from "@/lib/idioma-servidor";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,9 +19,13 @@ async function guardar(userId: string, consulta: string, resultado: string, idio
 }
 
 export async function POST(req: Request) {
+  // El idioma real viene en el cuerpo, pero los errores que pueden dispararse
+  // antes de leerlo necesitan uno: usamos el de la cookie, que es el mismo
+  // que el visitante tiene elegido en la web.
+  const langCookie = await idiomaActual();
   const session = await auth();
   if (!session?.user?.id) {
-    return Response.json({ error: "Necesitás iniciar sesión." }, { status: 401 });
+    return Response.json({ error: ERRORES[langCookie].sesion }, { status: 401 });
   }
   const userId = session.user.id;
 
@@ -27,24 +33,20 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return Response.json({ error: "Cuerpo inválido" }, { status: 400 });
+    return Response.json({ error: ERRORES[langCookie].cuerpo }, { status: 400 });
   }
 
   const consulta = String(body.consulta ?? "").trim().slice(0, 4000);
-  const idioma: Idioma = body.idioma === "en" ? "en" : "es";
+  const idioma: Idioma =
+    body.idioma === "es" || body.idioma === "en" ? body.idioma : langCookie;
   if (!consulta) {
-    return Response.json({ error: "Contanos sobre tu negocio." }, { status: 400 });
+    return Response.json({ error: ERRORES[idioma].consultaVacia }, { status: 400 });
   }
 
   const rl = limitar(`diagnostico:${userId}`, 8, 10 * 60 * 1000);
   if (!rl.permitido) {
     return Response.json(
-      {
-        error:
-          idioma === "en"
-            ? "Too many requests. Please try again in a few minutes."
-            : "Demasiadas consultas seguidas. Probá de nuevo en unos minutos.",
-      },
+      { error: ERRORES[idioma].rateLimitDiag },
       { status: 429, headers: { "Retry-After": String(rl.reintentarEnSeg) } },
     );
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import { T, IDIOMA_POR_DEFECTO, type Idioma } from "@/lib/contenido";
 import { useAuthSubmit } from "@/lib/useAuthSubmit";
 
 const GoogleIcon = () => (
@@ -15,7 +16,15 @@ const GoogleIcon = () => (
 const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none";
 const inputStyle = { background: "var(--panel-soft)", border: "1px solid var(--line)", color: "var(--text)" } as const;
 
-export function AuthForm({ next = "/diagnostico", google = true }: { next?: string; google?: boolean }) {
+export function AuthForm({
+  next = "/diagnostico",
+  google = true,
+  lang = IDIOMA_POR_DEFECTO,
+}: { next?: string; google?: boolean; lang?: Idioma }) {
+  // Los textos salen de contenido.ts, igual que el portón de la landing:
+  // antes este formulario tenía su propia copia en castellano y no seguía el
+  // toggle de idioma.
+  const d = T[lang].diag;
   const {
     tab, setTab, isSignup,
     nombre, setNombre,
@@ -26,12 +35,12 @@ export function AuthForm({ next = "/diagnostico", google = true }: { next?: stri
     cargando,
     submit,
   } = useAuthSubmit({
-    email: "Ingresá un email válido.",
-    password: "La contraseña debe tener al menos 6 caracteres.",
-    campos: "Completá nombre y empresa.",
-    login: "Email o contraseña incorrectos.",
-    cuentaCreadaSinLogin: "Cuenta creada, pero no pudimos entrar. Probá iniciar sesión.",
-    conexion: "Algo salió mal. Probá de nuevo.",
+    email: d.emailError,
+    password: d.passError,
+    campos: d.regError,
+    login: d.loginError,
+    cuentaCreadaSinLogin: d.loginError,
+    conexion: d.errorConexion,
   });
 
   return (
@@ -39,10 +48,10 @@ export function AuthForm({ next = "/diagnostico", google = true }: { next?: stri
       <div className="flex items-center gap-3 mb-5">
         <div className="h-11 w-11 rounded-2xl flex items-center justify-center gold-grad font-display font-bold" aria-hidden style={{ color: "var(--gold-dark)", fontSize: 19 }}>J</div>
         <div>
-          <div className="font-display text-[15px]">Accedé para ver tu diagnóstico</div>
+          <div className="font-display text-[15px]">{d.authTitulo}</div>
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" aria-hidden style={{ background: "var(--green)", animation: "pulse-dot 2s infinite" }} />
-            <span className="text-xs" style={{ color: "var(--dim)" }}>Estratega IA · en línea</span>
+            <span className="text-xs" style={{ color: "var(--dim)" }}>{d.online}</span>
           </div>
         </div>
       </div>
@@ -54,12 +63,12 @@ export function AuthForm({ next = "/diagnostico", google = true }: { next?: stri
             className="w-full flex items-center justify-center gap-2.5 rounded-xl px-4 py-3 text-sm font-semibold"
             style={{ background: "#fff", color: "#1f2328", border: "1px solid #dadce0" }}
           >
-            <GoogleIcon /> Continuar con Google
+            <GoogleIcon /> {d.googleBtn}
           </button>
 
           <div className="flex items-center gap-3 my-4 text-xs" style={{ color: "var(--dim)" }}>
             <span className="flex-1 h-px" style={{ background: "var(--line)" }} />
-            <span className="font-mono uppercase" style={{ letterSpacing: "0.12em" }}>o con tu email</span>
+            <span className="font-mono uppercase" style={{ letterSpacing: "0.12em" }}>{d.orSep}</span>
             <span className="flex-1 h-px" style={{ background: "var(--line)" }} />
           </div>
         </>
@@ -70,7 +79,7 @@ export function AuthForm({ next = "/diagnostico", google = true }: { next?: stri
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => { setTab(t); setError(null); }}
             className="flex-1 rounded-lg py-2 text-[13px] font-semibold"
             style={tab === t ? { color: "var(--gold-dark)", background: "linear-gradient(135deg,#f0c75e,#c99427)" } : { color: "var(--dim)" }}>
-            {t === "signup" ? "Crear cuenta" : "Entrar"}
+            {t === "signup" ? d.tabSignup : d.tabLogin}
           </button>
         ))}
       </div>
@@ -78,27 +87,25 @@ export function AuthForm({ next = "/diagnostico", google = true }: { next?: stri
       <div className="space-y-2.5">
         {isSignup && (
           <>
-            <label htmlFor="af-nombre" className="sr-only">Tu nombre</label>
-            <input id="af-nombre" className={inputCls} style={inputStyle} autoComplete="name" placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
-            <label htmlFor="af-empresa" className="sr-only">Tu empresa</label>
-            <input id="af-empresa" className={inputCls} style={inputStyle} autoComplete="organization" placeholder="Tu empresa" value={empresa} onChange={(e) => setEmpresa(e.target.value)} />
+            <label htmlFor="af-nombre" className="sr-only">{d.regNombre}</label>
+            <input id="af-nombre" className={inputCls} style={inputStyle} autoComplete="name" placeholder={d.regNombre} value={nombre} onChange={(e) => setNombre(e.target.value)} />
+            <label htmlFor="af-empresa" className="sr-only">{d.regEmpresa}</label>
+            <input id="af-empresa" className={inputCls} style={inputStyle} autoComplete="organization" placeholder={d.regEmpresa} value={empresa} onChange={(e) => setEmpresa(e.target.value)} />
           </>
         )}
-        <label htmlFor="af-email" className="sr-only">Tu email</label>
-        <input id="af-email" className={inputCls} style={inputStyle} type="email" autoComplete="email" inputMode="email" placeholder="Tu email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <label htmlFor="af-pass" className="sr-only">Contraseña</label>
-        <input id="af-pass" className={inputCls} style={inputStyle} type="password" autoComplete={isSignup ? "new-password" : "current-password"} placeholder="Contraseña (mín. 6)" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") submit(next); }} />
+        <label htmlFor="af-email" className="sr-only">{d.regEmail}</label>
+        <input id="af-email" className={inputCls} style={inputStyle} type="email" autoComplete="email" inputMode="email" placeholder={d.regEmail} value={email} onChange={(e) => setEmail(e.target.value)} />
+        <label htmlFor="af-pass" className="sr-only">{d.regPass}</label>
+        <input id="af-pass" className={inputCls} style={inputStyle} type="password" autoComplete={isSignup ? "new-password" : "current-password"} placeholder={d.regPass} value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") submit(next); }} />
       </div>
 
       {error && <p className="mt-3 text-sm" role="alert" style={{ color: "var(--red)" }}>{error}</p>}
 
       <button onClick={() => submit(next)} disabled={cargando} className="mt-5 w-full rounded-full px-6 py-3 text-sm font-semibold gold-grad" style={{ color: "var(--gold-dark)", opacity: cargando ? 0.6 : 1 }}>
-        {cargando ? "Un momento…" : isSignup ? "Crear cuenta y ver diagnóstico" : "Entrar y ver diagnóstico"} →
+        {cargando ? "…" : isSignup ? d.signupBtn : d.loginBtn} →
       </button>
 
-      <p className="mt-4 text-xs" style={{ color: "var(--dim)" }}>
-        Al continuar aceptás que guardemos estos datos para contactarte sobre tu diagnóstico.
-      </p>
+      <p className="mt-4 text-xs" style={{ color: "var(--dim)" }}>{d.regNota}</p>
     </div>
   );
 }

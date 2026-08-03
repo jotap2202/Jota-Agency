@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { EMAIL_CONTACTO } from "@/lib/contenido";
+import { idiomaActual } from "@/lib/idioma-servidor";
 import "./globals.css";
 
 const display = Space_Grotesk({
@@ -23,10 +24,15 @@ const mono = IBM_Plex_Mono({
   display: "swap",
 });
 
+// La web habla inglés por defecto, así que la metadata —lo que ve Google y
+// lo que se muestra al compartir el link— va en inglés. El castellano es la
+// alternativa que el visitante elige con el toggle, pero no tiene URL propia,
+// así que no hay una versión en castellano que indexar (ni hreflang que
+// declarar apuntando a una URL que no existe).
 const SITIO = "https://jota-agency.vercel.app";
-const TITULO = "JOTA agency — Generación de clientes B2B";
+const TITULO = "JOTA agency — B2B client generation";
 const DESCRIPCION =
-  "Nos dedicamos a una sola cosa: conseguirte clientes. Reuniones calificadas en tu agenda, todos los meses.";
+  "We do one thing: get you clients. Qualified meetings on your calendar, every month.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITIO),
@@ -38,7 +44,8 @@ export const metadata: Metadata = {
     description: DESCRIPCION,
     url: "/",
     siteName: "JOTA agency",
-    locale: "es_AR",
+    locale: "en_US",
+    alternateLocale: "es_AR",
     type: "website",
   },
   // La imagen sale de app/opengraph-image.tsx; Twitter/X la reusa como
@@ -62,14 +69,18 @@ const JSON_LD = {
   url: SITIO,
   description: DESCRIPCION,
   email: EMAIL_CONTACTO,
-  availableLanguage: ["es", "en"],
-  serviceType: "Generación de clientes B2B",
-  areaServed: "AR",
+  availableLanguage: ["en", "es"],
+  serviceType: "B2B client generation",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // El <html lang> tiene que coincidir con el idioma que realmente se
+  // renderiza, o los lectores de pantalla leen el texto con la pronunciación
+  // del idioma equivocado.
+  const lang = await idiomaActual();
+
   return (
-    <html lang="es" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    <html lang={lang} className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body>
         <script
           type="application/ld+json"
