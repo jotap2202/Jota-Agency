@@ -54,7 +54,7 @@ un botón para **descargar todo en Excel**.
 - Se entra desde el logo **J** del pie de página, o directo en `tudominio.com/panel`.
 - **Quién puede entrar:** por defecto solo el dueño. Para cambiarlo o sumar
   gente, definí `ADMIN_EMAILS` en Vercel separando con comas:
-  `ADMIN_EMAILS="vos@jota.agency,socio@jota.agency"`
+  `ADMIN_EMAILS="vos@jotaagency.org,socio@jotaagency.org"`
 - A cualquier otro usuario logueado le aparece un aviso de que es privado.
 
 ## Ver / exportar los leads

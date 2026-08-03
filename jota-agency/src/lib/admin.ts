@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
  *
  * 1. Estar en la lista ADMIN_EMAILS (separada por comas). Si definís esta
  *    variable en Vercel, manda solo ella y nadie más entra:
- *      ADMIN_EMAILS="vos@jota.agency,socio@jota.agency"
+ *      ADMIN_EMAILS="vos@jotaagency.org,socio@jotaagency.org"
  *
  * 2. Sin ADMIN_EMAILS definida: entra el mail por defecto y, además, la
  *    PRIMERA cuenta creada en el sitio — que es la del dueño, porque es

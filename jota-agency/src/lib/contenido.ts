@@ -10,7 +10,7 @@ export const IDIOMA_POR_DEFECTO: Idioma = "en";
 export const COOKIE_IDIOMA = "jota_lang";
 
 /** Mail de contacto de la agencia. Cambiándolo acá se actualiza en toda la web. */
-export const EMAIL_CONTACTO = "hola@jota.agency";
+export const EMAIL_CONTACTO = "jotaagency@jotaagency.org";
 
 export type Contenido = {
   skip: string;
