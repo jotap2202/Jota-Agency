@@ -80,6 +80,7 @@ export default async function PanelPage() {
             <span className="font-display text-base">Panel de leads</span>
           </Link>
           <div className="flex items-center gap-4">
+            <Link href="/panel/prospectos" className="btn-ghost" style={{ padding: "10px 20px", fontSize: 13 }}>Prospectos →</Link>
             <a href="/api/panel/export" className="btn-ghost" style={{ padding: "10px 20px", fontSize: 13 }}>Descargar Excel</a>
             <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
               <button type="submit" className="text-xs font-mono" style={{ color: "var(--dim)" }}>Salir</button>

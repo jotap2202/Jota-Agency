@@ -33,6 +33,36 @@ model Diagnostico {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+/// Empresas a las que JOTA les quiere vender. No tienen nada que ver con
+/// User: un User es alguien que se registró en la web por su cuenta; un
+/// Prospecto es alguien a quien vamos a buscar nosotros.
+model Prospecto {
+  id       String  @id @default(cuid())
+  empresa  String
+  rubro    String
+  ciudad   String?
+  web      String?
+  telefono String?
+  contacto String? // nombre de la persona, cuando lo sepamos
+  email    String?
+  /// nuevo | contactado | reunion | cliente | descartado
+  estado   String  @default("nuevo")
+  notas    String?
+  /// De dónde salió (búsqueda, referido, directorio…). Sirve para saber qué
+  /// canal de prospección funciona.
+  fuente   String?
+
+  /// Cuándo volver a escribirle. Es lo que hace que el panel pueda decir
+  /// "estos tenés que seguirlos hoy" en vez de mostrar una tabla plana.
+  proximoContacto DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([estado])
+  @@index([proximoContacto])
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
