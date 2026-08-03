@@ -1,7 +1,7 @@
 # jota-panel — panel de CEO, sitio aparte
 
 Panel privado de leads de JOTA agency, desplegado como sitio **independiente** de
-`jota-agency.vercel.app` — dominio propio, deploy propio en Vercel — pero leyendo
+`jotaagency.org` — dominio propio, deploy propio en Vercel — pero leyendo
 de la **misma base de datos**, así que los leads que capture `jota-agency` aparecen
 acá sin ningún paso extra.
 
@@ -27,7 +27,7 @@ acá sin ningún paso extra.
 
 Vercel te va a dar un dominio propio (ej. `jota-panel.vercel.app`). Podés
 ponerle un dominio lindo después desde Settings → Domains (ej.
-`panel.jota.agency`), igual que se podría hacer con `jota-agency`.
+`panel.jotaagency.org`), igual que `jota-agency` usa `jotaagency.org`.
 
 ## Puesta en marcha (local)
 
