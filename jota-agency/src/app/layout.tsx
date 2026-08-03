@@ -3,6 +3,7 @@ import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { EMAIL_CONTACTO } from "@/lib/contenido";
 import { idiomaActual } from "@/lib/idioma-servidor";
+import { SITIO_URL } from "@/lib/sitio";
 import "./globals.css";
 
 const display = Space_Grotesk({
@@ -29,7 +30,7 @@ const mono = IBM_Plex_Mono({
 // alternativa que el visitante elige con el toggle, pero no tiene URL propia,
 // así que no hay una versión en castellano que indexar (ni hreflang que
 // declarar apuntando a una URL que no existe).
-const SITIO = "https://jota-agency.vercel.app";
+const SITIO = SITIO_URL;
 const TITULO = "JOTA agency — B2B client generation";
 const DESCRIPCION =
   "We do one thing: get you clients. Qualified meetings on your calendar, every month.";

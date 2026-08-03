@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITIO_URL } from "@/lib/sitio";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -7,6 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/panel", "/acceder", "/diagnostico", "/api/"],
     },
-    host: "https://jota-agency.vercel.app",
+    host: SITIO_URL,
   };
 }
