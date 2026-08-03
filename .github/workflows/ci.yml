@@ -1,0 +1,64 @@
+name: CI
+
+# Verifica lint, tipos y build en cada push y cada PR de las dos apps web.
+# Hasta ahora todo esto se corría a mano; si alguien se olvidaba, el error
+# aparecía recién en producción.
+#
+# La app raíz (el bot de trading) queda afuera a propósito: es un proyecto
+# separado, con su propia versión de Next, que no se toca desde acá.
+
+# Solo corre cuando cambia una de las dos apps web (o este mismo archivo),
+# para no gastar minutos en cada commit del bot de trading.
+on:
+  push:
+    branches: ["main", "claude/**"]
+    paths: ["jota-agency/**", "jota-panel/**", ".github/workflows/ci.yml"]
+  pull_request:
+    paths: ["jota-agency/**", "jota-panel/**", ".github/workflows/ci.yml"]
+
+# Un push nuevo cancela la corrida anterior de la misma rama.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [jota-agency, jota-panel]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    env:
+      # Valores falsos, solo para que el build compile. Prisma no se conecta a
+      # la base durante `generate` ni durante `next build` (todas las páginas
+      # que consultan la base son force-dynamic, así que no se prerenderizan).
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      AUTH_SECRET: secreto-falso-solo-para-el-build-de-ci
+      PANEL_SECRET: secreto-falso-solo-para-el-build-de-ci
+      PANEL_PASSWORD: password-falso-solo-para-el-build-de-ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tipos
+        run: npx tsc --noEmit
+
+      # Se invoca next build directo en vez de `npm run build`: el script de
+      # jota-agency incluye `prisma db push`, que escribiría el schema contra
+      # la base de la variable DATABASE_URL. En CI eso no debe pasar nunca.
+      - name: Build
+        run: npx prisma generate && npx next build

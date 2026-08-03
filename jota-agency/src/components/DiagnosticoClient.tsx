@@ -42,7 +42,11 @@ export function DiagnosticoClient({ email }: { email?: string | null }) {
             <span className="h-px w-8" style={{ background: "var(--gold)" }} />
             <span className="font-mono text-[11px] uppercase" style={{ color: "var(--gold)", letterSpacing: "0.22em" }}>Diagnóstico de J</span>
           </div>
-          <p className="mt-4 text-sm whitespace-pre-wrap" aria-live="polite" style={{ lineHeight: 1.8 }}>{resultado}</p>
+          {/* Mismo criterio que en la landing: el párrafo visible no es la
+              live region (anunciaría cada token del streaming). Se anuncia
+              una vez, ya completo, desde la copia sr-only. */}
+          <p className="mt-4 text-sm whitespace-pre-wrap" aria-hidden="true" aria-busy={cargando} style={{ lineHeight: 1.8 }}>{resultado}</p>
+          <p className="sr-only" role="status">{cargando ? "J está analizando tu negocio…" : resultado}</p>
 
           {esDemo && (
             <p className="mt-3 text-xs" role="status" style={{ color: "var(--dim)" }}>

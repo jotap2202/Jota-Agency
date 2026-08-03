@@ -514,10 +514,15 @@ function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
       ) : (
         <div style={{ marginTop: 12 }}>
           <div className="eyebrow"><span className="l" /><span className="t">{d.resultado}</span></div>
-          <p className="result" aria-live="polite" aria-busy={cargando}>
+          {/* El texto llega token por token. Si el párrafo visible fuera la
+              live region, un lector de pantalla anunciaría fragmentos de
+              oración cientos de veces. Lo anunciamos una sola vez, ya
+              completo, desde una copia sr-only. */}
+          <p className="result" aria-hidden="true" aria-busy={cargando}>
             {resultado}
             {cargando && <span className="caret" aria-hidden />}
           </p>
+          <p className="sr-only" role="status">{cargando ? d.analizando : resultado}</p>
 
           {esDemo && (
             <p className="demo-note" role="status">
