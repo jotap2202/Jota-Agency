@@ -57,6 +57,12 @@ jobs:
       - name: Tipos
         run: npx tsc --noEmit
 
+      # Solo jota-agency tiene pruebas por ahora. Corren con el TypeScript
+      # nativo de Node 22, sin dependencias de testing.
+      - name: Pruebas
+        if: matrix.app == 'jota-agency'
+        run: npm test
+
       # Se invoca next build directo en vez de `npm run build`: el script de
       # jota-agency incluye `prisma db push`, que escribiría el schema contra
       # la base de la variable DATABASE_URL. En CI eso no debe pasar nunca.

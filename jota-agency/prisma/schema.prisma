@@ -56,11 +56,247 @@ model Prospecto {
   /// "estos tenés que seguirlos hoy" en vez de mostrar una tabla plana.
   proximoContacto DateTime?
 
+  // ---- Campos del CEO Command Center ----
+  // Se suman como opcionales para no romper los prospectos ya cargados.
+  cargo             String?
+  industria         String?
+  pais              String?  @default("US")
+  linkedin          String?
+  empleados         Int?
+  ingresosEstimados Int? // centavos, anuales
+  servicioInteres   String?
+  responsable       String?
+  ultimoContacto    DateTime?
+  /// Valor estimado del negocio, en centavos.
+  valorEstimado     Int      @default(0)
+  /// 0 a 100. Probabilidad de cierre; alimenta el pipeline ponderado.
+  probabilidad      Int      @default(10)
+  /// 0 a 100. Se calcula con lib/ceo/score.ts, no se escribe a mano.
+  score             Int      @default(0)
+  /// Por qué le dio ese score, ya calculado, para poder mostrarlo.
+  scoreDetalle      String?
+
+  esDemo Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  actividades Actividad[]
+  tareas      TareaCeo[]
+
   @@index([estado])
   @@index([proximoContacto])
+  @@index([score])
+  @@index([esDemo])
+}
+
+// ===========================================================================
+//  CEO Command Center
+//
+//  Todo el dinero se guarda en CENTAVOS enteros (Int), nunca en decimales:
+//  los flotantes acumulan error de redondeo y eso termina apareciendo en un
+//  reporte. Se formatea con los helpers de lib/ceo/dinero.ts.
+//
+//  Cada tabla tiene `esDemo`: los datos de ejemplo conviven con los reales
+//  sin mezclarse y se borran de una sin tocar lo que cargaste vos.
+// ===========================================================================
+
+model Cliente {
+  id             String    @id @default(cuid())
+  empresa        String
+  contacto       String?
+  email          String?
+  telefono       String?
+  servicio       String
+  inicio         DateTime  @default(now())
+  precioMensual  Int // centavos
+  costoOperativo Int       @default(0) // centavos
+  estadoContrato String    @default("activo") // activo | pausado | cancelado
+  proximaFactura DateTime?
+
+  // Resultados que le entregamos: es lo que sostiene la renovación.
+  reunionesLogradas Int @default(0)
+  leadsEntregados   Int @default(0)
+  satisfaccion      Int @default(3) // 1 a 5
+
+  /// healthy | atencion | riesgo | pausado | cancelado
+  salud        String    @default("healthy")
+  ultimoContacto DateTime?
+  notas        String?
+  proximosPasos String?
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ingresos Ingreso[]
+  tareas   TareaCeo[]
+
+  @@index([salud])
+  @@index([esDemo])
+}
+
+model Ingreso {
+  id         String   @id @default(cuid())
+  concepto   String
+  monto      Int // centavos
+  fecha      DateTime @default(now())
+  servicio   String
+  canal      String? // de qué canal de adquisición vino el cliente
+  recurrente Boolean  @default(false)
+  cobrado    Boolean  @default(true)
+  clienteId  String?
+  cliente    Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fecha])
+  @@index([esDemo])
+}
+
+model Gasto {
+  id        String   @id @default(cuid())
+  concepto  String
+  monto     Int // centavos
+  fecha     DateTime @default(now())
+  categoria String // marketing | herramientas | equipo | otros
+  canal     String? // si es marketing, a qué canal se imputa (para CAC y ROI)
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fecha])
+  @@index([esDemo])
+}
+
+model Objetivo {
+  id     String @id @default(cuid())
+  titulo String
+  /// mensual | trimestral | anual
+  tipo   String @default("mensual")
+  /// Qué se mide: ingresos | clientes | reuniones | leads | mrr | tasaCierre | cac | resenias
+  metrica String
+
+  /// En centavos cuando la métrica es de dinero; en unidades cuando no.
+  valorInicial  Int @default(0)
+  valorObjetivo Int
+  /// Se recalcula solo desde los datos reales cuando la métrica lo permite.
+  valorManual   Int?
+
+  periodoInicio DateTime
+  periodoFin    DateTime
+  responsable   String?
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tareas TareaCeo[]
+
+  @@index([periodoFin])
+  @@index([esDemo])
+}
+
+model Campania {
+  id       String @id @default(cuid())
+  nombre   String
+  /// coldEmail | linkedin | ads | contenido | referidos | reputacion | retargeting
+  canal    String
+  publico  String?
+  industria String?
+
+  inicio DateTime  @default(now())
+  fin    DateTime?
+
+  presupuesto Int @default(0) // centavos
+  gastado     Int @default(0) // centavos
+
+  enviados            Int @default(0)
+  respuestas          Int @default(0)
+  respuestasPositivas Int @default(0)
+  leads               Int @default(0)
+  reuniones           Int @default(0)
+  ventas              Int @default(0)
+  ingresos            Int @default(0) // centavos
+
+  /// draft | scheduled | active | paused | completed
+  estado String @default("draft")
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tareas TareaCeo[]
+
+  @@index([estado])
+  @@index([esDemo])
+}
+
+model TareaCeo {
+  id          String  @id @default(cuid())
+  titulo      String
+  descripcion String?
+  /// critical | high | medium | low
+  prioridad   String  @default("medium")
+  /// sales | marketing | delivery | finance | operations | product | hiring | strategy
+  categoria   String  @default("sales")
+  vence       DateTime?
+  /// pendiente | enCurso | hecha
+  estado      String  @default("pendiente")
+  /// Impacto estimado en ingresos, en centavos. Ordena "qué hacer hoy".
+  impacto     Int     @default(0)
+  responsable String?
+
+  prospectoId String?
+  prospecto   Prospecto? @relation(fields: [prospectoId], references: [id], onDelete: SetNull)
+  clienteId   String?
+  cliente     Cliente?   @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  campaniaId  String?
+  campania    Campania?  @relation(fields: [campaniaId], references: [id], onDelete: SetNull)
+  objetivoId  String?
+  objetivo    Objetivo?  @relation(fields: [objetivoId], references: [id], onDelete: SetNull)
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([estado, vence])
+  @@index([esDemo])
+}
+
+model Notificacion {
+  id      String  @id @default(cuid())
+  /// leadSinResponder | seguimientoVencido | reunionProxima | propuestaSinRespuesta |
+  /// clienteEnRiesgo | facturaPendiente | campaniaBaja | objetivoAtrasado | nuevoLead
+  tipo    String
+  titulo  String
+  detalle String?
+  url     String?
+  leida   Boolean @default(false)
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([leida, createdAt])
+  @@index([esDemo])
+}
+
+model Actividad {
+  id          String    @id @default(cuid())
+  prospectoId String
+  prospecto   Prospecto @relation(fields: [prospectoId], references: [id], onDelete: Cascade)
+  /// nota | llamada | email | reunion | cambioEstado
+  tipo        String
+  detalle     String
+  autor       String?
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([prospectoId, createdAt])
 }
 
 model Account {
