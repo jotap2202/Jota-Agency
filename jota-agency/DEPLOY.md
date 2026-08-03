@@ -130,15 +130,15 @@ npm run dev               # http://localhost:3000
 
 ## Dominio propio (cuando quieras)
 
-En Vercel → tu proyecto → *Settings → Domains* → agregá tu dominio (ej. `jota.agency`).
-Después sumá `https://jota.agency/api/auth/callback/google` a los redirect URIs de Google.
+En Vercel → tu proyecto → *Settings → Domains* → agregá tu dominio (ej. `jotaagency.org`).
+Después sumá `https://jotaagency.org/api/auth/callback/google` a los redirect URIs de Google.
 
 ---
 
 ## Antes de compartirlo con clientes (recomendado)
 
-- Reemplazar los **testimonios de ejemplo** por reales (`src/app/page.tsx`).
-- Poner tu email real en el CTA "Agendar llamada" (`src/components/DiagnosticoClient.tsx`;
-  hoy usa `hola@jota.agency`).
+- Sumar **testimonios reales** (la sección se quitó: no se muestran inventados).
+- El email de contacto de toda la web sale de `EMAIL_CONTACTO` en
+  `src/lib/contenido.ts`. Cambiándolo ahí se actualiza en todos los CTA.
 - Sumar una **Política de Privacidad** enlazada desde el portón de acceso
   (importante legalmente porque estás capturando datos de personas).
