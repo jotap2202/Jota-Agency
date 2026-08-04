@@ -60,7 +60,7 @@ model Prospecto {
   // Se suman como opcionales para no romper los prospectos ya cargados.
   cargo             String?
   industria         String?
-  pais              String?  @default("US")
+  pais              String?   @default("US")
   linkedin          String?
   empleados         Int?
   ingresosEstimados Int? // centavos, anuales
@@ -68,11 +68,11 @@ model Prospecto {
   responsable       String?
   ultimoContacto    DateTime?
   /// Valor estimado del negocio, en centavos.
-  valorEstimado     Int      @default(0)
+  valorEstimado     Int       @default(0)
   /// 0 a 100. Probabilidad de cierre; alimenta el pipeline ponderado.
-  probabilidad      Int      @default(10)
+  probabilidad      Int       @default(10)
   /// 0 a 100. Se calcula con lib/ceo/score.ts, no se escribe a mano.
-  score             Int      @default(0)
+  score             Int       @default(0)
   /// Por qué le dio ese score, ya calculado, para poder mostrarlo.
   scoreDetalle      String?
 
@@ -120,10 +120,10 @@ model Cliente {
   satisfaccion      Int @default(3) // 1 a 5
 
   /// healthy | atencion | riesgo | pausado | cancelado
-  salud        String    @default("healthy")
+  salud          String    @default("healthy")
   ultimoContacto DateTime?
-  notas        String?
-  proximosPasos String?
+  notas          String?
+  proximosPasos  String?
 
   esDemo    Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -173,15 +173,15 @@ model Gasto {
 }
 
 model Objetivo {
-  id     String @id @default(cuid())
-  titulo String
+  id      String @id @default(cuid())
+  titulo  String
   /// mensual | trimestral | anual
-  tipo   String @default("mensual")
+  tipo    String @default("mensual")
   /// Qué se mide: ingresos | clientes | reuniones | leads | mrr | tasaCierre | cac | resenias
   metrica String
 
   /// En centavos cuando la métrica es de dinero; en unidades cuando no.
-  valorInicial  Int @default(0)
+  valorInicial  Int  @default(0)
   valorObjetivo Int
   /// Se recalcula solo desde los datos reales cuando la métrica lo permite.
   valorManual   Int?
@@ -201,11 +201,11 @@ model Objetivo {
 }
 
 model Campania {
-  id       String @id @default(cuid())
-  nombre   String
+  id        String  @id @default(cuid())
+  nombre    String
   /// coldEmail | linkedin | ads | contenido | referidos | reputacion | retargeting
-  canal    String
-  publico  String?
+  canal     String
+  publico   String?
   industria String?
 
   inicio DateTime  @default(now())
@@ -236,18 +236,18 @@ model Campania {
 }
 
 model TareaCeo {
-  id          String  @id @default(cuid())
+  id          String    @id @default(cuid())
   titulo      String
   descripcion String?
   /// critical | high | medium | low
-  prioridad   String  @default("medium")
+  prioridad   String    @default("medium")
   /// sales | marketing | delivery | finance | operations | product | hiring | strategy
-  categoria   String  @default("sales")
+  categoria   String    @default("sales")
   vence       DateTime?
   /// pendiente | enCurso | hecha
-  estado      String  @default("pendiente")
+  estado      String    @default("pendiente")
   /// Impacto estimado en ingresos, en centavos. Ordena "qué hacer hoy".
-  impacto     Int     @default(0)
+  impacto     Int       @default(0)
   responsable String?
 
   prospectoId String?
@@ -331,4 +331,534 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// ===========================================================================
+//  24/7 AI Agent — plataforma multiempresa
+//
+//  Regla que no se rompe: TODA fila pertenece a un tenant y todo índice
+//  arranca por tenantId. Así ninguna consulta puede barrer datos de otro
+//  cliente ni "por accidente".
+//
+//  Dinero en CENTAVOS enteros, igual que el resto del proyecto.
+//  Ver docs/agente-24-7/ARQUITECTURA.md
+// ===========================================================================
+
+/// El negocio al que Jota Agency le instala el agente.
+model Tenant {
+  id             String @id @default(cuid())
+  slug           String @unique
+  /// Identifica al tenant desde el widget. NO es un secreto: solo permite
+  /// crear mensajes entrantes, nunca leer nada.
+  clavePublica   String @unique
+  /// Secreto para firmar webhooks entrantes (HMAC-SHA256). Nunca sale al front.
+  secretoWebhook String
+
+  nombreNegocio String
+  descripcion   String?
+  sitioWeb      String?
+  /// activo | pausado | onboarding
+  estado        String  @default("onboarding")
+  zonaHoraria   String  @default("Pacific/Honolulu")
+  idioma        String  @default("en")
+
+  // ---- Identidad del agente ----
+  nombreAgente   String  @default("Ava")
+  presentacion   String?
+  /// profesional | cercano | formal | directo
+  tono           String  @default("profesional")
+  /// corta | media | larga
+  largoRespuesta String  @default("corta")
+  usaEmojis      Boolean @default(false)
+  firmaEmail     String?
+
+  // ---- Información comercial aprobada ----
+  /// Servicios, uno por línea. Es lo único que el agente puede ofrecer.
+  servicios    String  @default("")
+  areaServicio String?
+  /// Lo que el agente puede decir de precios. Si está vacío, NO habla de precios.
+  reglasPrecio String  @default("")
+  politicas    String  @default("")
+  /// Horarios por día: {"mon":[["09:00","17:00"]], ...}
+  horarios     Json?
+  /// Temas que el agente tiene prohibido tocar, uno por línea.
+  prohibido    String  @default("")
+
+  // ---- Comportamiento ----
+  /// draft | supervisado | autonomo
+  modo               String @default("supervisado")
+  /// Por canal: {"website_chat":"autonomo","email":"supervisado"}
+  modoPorCanal       Json?
+  /// Debajo de esta confianza, el agente no responde solo.
+  confianzaMinima    Float  @default(0.6)
+  /// Score a partir del cual se avisa al equipo.
+  umbralAviso        Int    @default(70)
+  /// Acciones que exigen aprobación humana, una por línea.
+  requiereAprobacion String @default("enviar_presupuesto\nofrecer_descuento\nresponder_queja_grave")
+  /// Reglas extra de derivación a humano, en texto.
+  reglasHandoff      String @default("")
+  /// Minutos sin respuesta antes de que recuperación levante la mano.
+  slaRespuestaMin    Int    @default(15)
+  /// Canales habilitados, uno por línea.
+  canales            String @default("website_chat\nweb_form\nemail")
+
+  /// Pasos de seguimiento en horas: [24, 72, 168]
+  secuenciaHoras Int[] @default([24, 72, 168])
+
+  /// Configuración libre que todavía no merece columna propia.
+  ajustes Json?
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  integraciones  TenantIntegration[]
+  miembros       TenantMember[]
+  contactos      Contact[]
+  conversaciones Conversation[]
+  mensajes       Message[]
+  leads          Lead[]
+  citas          Appointment[]
+  fuentes        KnowledgeSource[]
+  fragmentos     KnowledgeChunk[]
+  seguimientos   FollowUp[]
+  salidas        EmailOutbox[]
+  supresiones    Suppression[]
+  aprobaciones   ApprovalRequest[]
+  eventos        WorkflowEvent[]
+  auditoria      AuditLog[]
+
+  @@index([estado])
+  @@index([esDemo])
+}
+
+/// Credenciales de terceros. El valor va CIFRADO (AES-256-GCM) con
+/// APP_ENCRYPTION_KEY: en la base nunca hay un token legible.
+model TenantIntegration {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// email_smtp | email_resend | email_entrante | google_calendar | slack |
+  /// crm_webhook | webhook_saliente
+  tipo         String
+  /// Datos no sensibles (host, remitente, calendarId…).
+  config       Json?
+  /// Secreto cifrado. Nunca se devuelve al frontend.
+  cifrado      String?
+  /// activo | sin_configurar | error
+  estado       String    @default("sin_configurar")
+  ultimoError  String?
+  verificadaEn DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, tipo])
+  @@index([tenantId, estado])
+}
+
+/// Gente del negocio: a quién se le avisa y quién toma los handoff.
+model TenantMember {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  nombre       String
+  email        String
+  telefono     String?
+  rol          String  @default("owner") // owner | sales | support
+  /// Recibe los avisos de lead calificado y handoff.
+  recibeAvisos Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  conversaciones Conversation[]
+  leads          Lead[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+model Contact {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  nombre      String?
+  apellido    String?
+  email       String?
+  telefono    String?
+  empresa     String?
+  sitioWeb    String?
+  ubicacion   String?
+  idioma      String  @default("en")
+  zonaHoraria String?
+
+  /// desconocido | otorgado | denegado
+  consentimiento String  @default("desconocido")
+  noContactar    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conversaciones Conversation[]
+  leads          Lead[]
+  citas          Appointment[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId, telefono])
+  @@index([tenantId, createdAt])
+}
+
+model Conversation {
+  id        String  @id @default(cuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contactId String
+  contacto  Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  /// website_chat | web_form | email | webhook | whatsapp | sms …
+  canal       String
+  /// Hilo del canal externo (Message-ID raíz del email, id de sesión del chat…).
+  hiloExterno String?
+
+  /// abierta | esperando_humano | resuelta | descartada
+  estado    String        @default("abierta")
+  asignadoA String?
+  asignado  TenantMember? @relation(fields: [asignadoA], references: [id], onDelete: SetNull)
+  /// Si es false, la IA no responde: la tomó una persona.
+  iaActiva  Boolean       @default(true)
+
+  intencion   String?
+  /// Etiquetas extra cuando la consulta es más de una cosa.
+  intenciones String[] @default([])
+  sentimiento String?
+  urgencia    String?
+  resumen     String?
+
+  ultimoMensajeAt DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  mensajes     Message[]
+  leads        Lead[]
+  citas        Appointment[]
+  aprobaciones ApprovalRequest[]
+
+  @@unique([tenantId, canal, hiloExterno])
+  @@index([tenantId, estado, ultimoMensajeAt])
+  @@index([tenantId, ultimoMensajeAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversacion   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  /// entrante | saliente
+  direccion String
+  /// contacto | agente | humano | sistema
+  remitente String
+  contenido String
+  /// texto | html
+  formato   String @default("texto")
+
+  /// Message-ID del canal externo, si existe.
+  idExterno         String?
+  /// Clave de deduplicación: única por tenant. Es lo que evita procesar dos
+  /// veces el mismo formulario reenviado o el mismo webhook reintentado.
+  claveIdempotencia String?
+
+  /// pendiente | enviado | entregado | rebotado | fallido
+  entrega       String   @default("entregado")
+  generadoPorIa Boolean  @default(false)
+  confianza     Float?
+  /// Fragmentos de conocimiento usados, para poder auditar la respuesta.
+  fuentes       String[] @default([])
+  /// Tokens y costo, para métricas reales de costo por conversación.
+  tokensEntrada Int      @default(0)
+  tokensSalida  Int      @default(0)
+
+  /// Estado terminal de la consulta entrante (ver ARQUITECTURA §3).
+  /// respondida | calificada | agendada | seguimiento | handoff | descartada | error
+  estadoFinal String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, claveIdempotencia])
+  @@index([tenantId, conversationId, createdAt])
+  @@index([tenantId, direccion, estadoFinal, createdAt])
+}
+
+model Lead {
+  id             String        @id @default(cuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contactId      String
+  contacto       Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  conversationId String?
+  conversacion   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  servicio       String?
+  problema       String?
+  resultado      String?
+  /// Centavos. Solo se guarda si el contacto lo dijo: el modelo no lo inventa.
+  presupuesto    Int?
+  plazo          String?
+  ubicacion      String?
+  tamanioEmpresa String?
+  autoridad      String?
+  mejorHorario   String?
+  canalPreferido String?
+
+  /// 0 a 100, explicable.
+  score        Int    @default(0)
+  /// alta | media | baja — según cuántos factores tenían datos.
+  confianza    String @default("baja")
+  /// JSON con {positivos, negativos, faltantes}.
+  scoreDetalle Json?
+
+  /// nuevo | calificado | nutrir | baja_prioridad | descartado | ganado | perdido
+  estado        String        @default("nuevo")
+  ownerId       String?
+  owner         TenantMember? @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  proximaAccion String?
+  seguirEl      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  citas        Appointment[]
+  seguimientos FollowUp[]
+
+  @@index([tenantId, estado, score])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, seguirEl])
+}
+
+model Appointment {
+  id             String        @id @default(cuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contactId      String
+  contacto       Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  leadId         String?
+  lead           Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  conversationId String?
+  conversacion   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  /// interno | google_calendar | calendly
+  proveedor   String   @default("interno")
+  idExterno   String?
+  titulo      String
+  motivo      String?
+  inicio      DateTime
+  fin         DateTime
+  zonaHoraria String
+  /// agendada | reprogramada | cancelada | completada | ausente
+  estado      String   @default("agendada")
+  urlReunion  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, inicio])
+  @@index([tenantId, estado, inicio])
+}
+
+model KnowledgeSource {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// manual | faq | web | pdf | precios | politicas | servicios
+  tipo           String
+  titulo         String
+  url            String?
+  /// Contenido crudo. De acá salen los fragmentos.
+  contenido      String    @default("")
+  /// activa | sincronizando | error | archivada
+  estado         String    @default("activa")
+  ultimoError    String?
+  sincronizadaEn DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fragmentos KnowledgeChunk[]
+
+  @@index([tenantId, estado])
+}
+
+model KnowledgeChunk {
+  id       String          @id @default(cuid())
+  tenantId String
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sourceId String
+  fuente   KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  orden  Int    @default(0)
+  titulo String
+  texto  String
+  /// Texto normalizado (minúsculas, sin tildes) para la búsqueda léxica.
+  indice String
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, sourceId, orden])
+}
+
+model FollowUp {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId   String
+  lead     Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  paso              Int
+  programadoEn      DateTime
+  /// pendiente | enviado | cancelado | fallido
+  estado            String    @default("pendiente")
+  /// respondio | agendo | baja | cliente | spam | humano | rebote | manual
+  motivoCancelacion String?
+  enviadoEn         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, leadId, paso])
+  @@index([tenantId, estado, programadoEn])
+}
+
+/// Cola de salida. Guardar antes de enviar: si el proveedor falla, el email
+/// no se pierde, se reintenta.
+model EmailOutbox {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  para       String
+  cc         String[] @default([])
+  responderA String?
+  asunto     String
+  html       String
+  texto      String
+
+  /// Cabeceras que mantienen el hilo. Sin esto, cada respuesta abre un hilo nuevo.
+  messageId  String  @unique
+  inReplyTo  String?
+  references String?
+
+  /// confirmacion | respuesta | faltan_datos | resumen_interno | cita_confirmada |
+  /// cita_recordatorio | seguimiento | handoff | reactivacion | error_interno
+  plantilla String
+  /// transaccional | marketing
+  clase     String @default("transaccional")
+
+  /// pendiente | enviando | enviado | fallido | suprimido
+  estado      String    @default("pendiente")
+  intentos    Int       @default(0)
+  ultimoError String?
+  enviadoEn   DateTime?
+
+  /// Evita mandar dos veces lo mismo (mismo lead, mismo paso, mismo tipo).
+  claveIdempotencia String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, claveIdempotencia])
+  @@index([tenantId, estado, createdAt])
+}
+
+/// Bajas y rebotes duros. Se consulta ANTES de cada envío.
+model Suppression {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  email   String
+  /// baja | rebote | queja | manual
+  motivo  String
+  detalle String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+model ApprovalRequest {
+  id             String        @id @default(cuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversationId String?
+  conversacion   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  /// enviar_respuesta | enviar_presupuesto | ofrecer_descuento | …
+  accion    String
+  /// Lo que se enviaría, tal cual.
+  propuesta String
+  /// Datos con los que se armó, para poder revisarlos.
+  datos     Json?
+  motivo    String?
+  confianza Float?
+  riesgos   String[] @default([])
+
+  /// pendiente | aprobada | editada | rechazada
+  estado      String    @default("pendiente")
+  resueltaPor String?
+  resueltaEn  DateTime?
+  textoFinal  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, estado, createdAt])
+}
+
+/// Traza de ejecución + dead-letter queue. Todo paso deja rastro acá.
+model WorkflowEvent {
+  id       String  @id @default(cuid())
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  workflow       String
+  /// inicio | ok | error | reintento | dlq
+  tipo           String
+  correlationId  String
+  estado         String    @default("ok")
+  mensajeError   String?
+  /// Referencia al dato, NO el dato. Nada de payloads con datos personales.
+  referencia     String?
+  intentos       Int       @default(0)
+  proximoIntento DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, workflow, createdAt])
+  @@index([tipo, proximoIntento])
+  @@index([correlationId])
+}
+
+model AuditLog {
+  id       String  @id @default(cuid())
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// ia | humano | sistema
+  actorTipo String
+  actorId   String?
+  accion    String
+  entidad   String
+  entidadId String?
+  metadatos Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entidad, entidadId])
 }
