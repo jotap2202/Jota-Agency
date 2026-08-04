@@ -4,6 +4,7 @@ import { hayClaveIa } from "./agente";
 import { hayClaveMaestra } from "./cripto";
 import { hayProveedor } from "./email";
 import { fuentesDesactualizadas } from "./conocimiento";
+import { estadoAdmin } from "@/lib/admin";
 
 /**
  * Workflow 19 — Health Check.
@@ -38,6 +39,21 @@ export async function revisar(tenantId: string): Promise<{ estado: "ok" | "atenc
           clave: "ia", titulo: "Modelo de IA", estado: "roto",
           detalle: "Falta ANTHROPIC_API_KEY",
           consecuencia: "El agente no responde: toda consulta se deriva al equipo.",
+        },
+  );
+
+  // --- Control de acceso al panel ---
+  const admin = estadoAdmin();
+  chequeos.push(
+    admin.ok
+      ? {
+          clave: "admin", titulo: "Acceso al panel", estado: "ok",
+          detalle: admin.detalle,
+        }
+      : {
+          clave: "admin", titulo: "Acceso al panel", estado: "roto",
+          detalle: admin.detalle,
+          consecuencia: "Nadie puede entrar al panel hasta configurar ADMIN_EMAILS.",
         },
   );
 

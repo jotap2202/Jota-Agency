@@ -12,7 +12,10 @@
     "test": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/metricas.ts",
     "test:db": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/integracion.ts",
     "test:agente": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/agente.ts",
-    "test:agente-db": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/agente-db.ts"
+    "test:agente-db": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/agente-db.ts",
+    "test:secretos": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/secretos.ts",
+    "test:agente-real": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/agente-real.ts",
+    "test:email-real": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/email-real.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",

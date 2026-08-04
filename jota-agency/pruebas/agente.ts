@@ -28,6 +28,7 @@ import { estaAbierto, modoDe, lineas, canalHabilitado, requiereAprobacion, paraT
 import { construirPrompt } from "@/lib/agente/prompt";
 import { cifrar, descifrar, firmar, firmaValida } from "@/lib/agente/cripto";
 import { costoCentavos, dividir } from "@/lib/agente/metricas";
+import { esAdmin, estadoAdmin } from "@/lib/admin";
 import { DATOS_LEAD_VACIO } from "@/lib/agente/tipos";
 import type { Tenant } from "@prisma/client";
 
@@ -425,6 +426,46 @@ ok(dividir(10, 5) === 2, "dividir normal");
 ok(costoCentavos(1_000_000, 0, "claude-sonnet-5") === 300, "US$3 por millón de tokens de entrada");
 ok(costoCentavos(0, 1_000_000, "claude-sonnet-5") === 1500, "US$15 por millón de tokens de salida");
 ok(costoCentavos(1000, 1000, "modelo-inexistente") === null, "un modelo sin precio conocido devuelve null, no un número inventado");
+
+// ===========================================================================
+grupo("Acceso administrativo — falla cerrado en producción");
+
+const nodeEnvOriginal = process.env.NODE_ENV;
+const adminsOriginal = process.env.ADMIN_EMAILS;
+const ponerEntorno = (env: string | undefined, admins: string | undefined) => {
+  // NODE_ENV figura como readonly en los tipos de Node, pero en ejecución es
+  // una propiedad común de process.env. El cast es lo que permite probar los
+  // dos entornos en la misma corrida.
+  const entorno = process.env as Record<string, string | undefined>;
+  if (env === undefined) delete entorno.NODE_ENV;
+  else entorno.NODE_ENV = env;
+  if (admins === undefined) delete entorno.ADMIN_EMAILS;
+  else entorno.ADMIN_EMAILS = admins;
+};
+
+// --- Producción SIN ADMIN_EMAILS: no entra nadie ---
+ponerEntorno("production", undefined);
+ok(estadoAdmin().modo === "bloqueado", "en producción sin ADMIN_EMAILS el estado es 'bloqueado'");
+ok(!estadoAdmin().ok, "y el health check lo marca como problema");
+ok(!(await esAdmin("jotanico17@gmail.com")), "NI SIQUIERA entra el mail que estaba hardcodeado");
+ok(!(await esAdmin("cualquiera@gmail.com")), "y por supuesto no entra un desconocido");
+ok(!(await esAdmin("")), "un email vacío tampoco");
+
+// --- Producción CON ADMIN_EMAILS: solo la lista ---
+ponerEntorno("production", "duenio@jotaagency.org, Socio@JotaAgency.org");
+ok(await esAdmin("duenio@jotaagency.org"), "con la lista configurada, entra quien está en ella");
+ok(await esAdmin("SOCIO@jotaagency.org"), "sin importar mayúsculas ni espacios");
+ok(!(await esAdmin("jotanico17@gmail.com")), "y NO entra nadie fuera de la lista, ni el default viejo");
+ok(estadoAdmin().cantidad === 2, "el health check cuenta los administradores configurados");
+ok(estadoAdmin().modo === "configurado", "y reporta el modo correcto");
+
+// --- Desarrollo: se conserva la comodidad ---
+ponerEntorno("development", undefined);
+ok(estadoAdmin().modo === "desarrollo", "en desarrollo sin ADMIN_EMAILS el modo es 'desarrollo'");
+ok(estadoAdmin().ok, "y no se reporta como problema: ahí la comodidad no cuesta nada");
+ok(await esAdmin("jotanico17@gmail.com"), "en desarrollo sí entra el mail por defecto");
+
+ponerEntorno(nodeEnvOriginal, adminsOriginal);
 
 // ===========================================================================
 console.log(`\n${fallos === 0 ? "✅" : "❌"} ${total - fallos}/${total} pruebas del agente pasaron\n`);
