@@ -89,12 +89,20 @@ grupo("2. Ningún componente de cliente lee process.env");
 const clientes = archivos.filter((a) => a.cliente);
 console.log(`  (${clientes.length} archivos con "use client")`);
 
+// NODE_ENV es la única excepción, y no es una concesión: Next lo incrusta en
+// TODOS los bundles del cliente siempre, sea que uno lo lea o no. No hay nada
+// que filtrar. Cualquier otra variable sí queda expuesta al leerla acá.
+const PUBLICAS_POR_DEFINICION = ["NODE_ENV"];
+
 const filtraciones: string[] = [];
 for (const a of clientes) {
   const usos = a.texto.match(/process\.env\.[A-Z_0-9]+/g) ?? [];
-  for (const u of usos) filtraciones.push(`${u} en ${a.ruta}`);
+  for (const u of usos) {
+    if (PUBLICAS_POR_DEFINICION.some((v) => u.endsWith(`.${v}`))) continue;
+    filtraciones.push(`${u} en ${a.ruta}`);
+  }
 }
-ok(filtraciones.length === 0, "ningún componente de cliente lee process.env", filtraciones.join(", ") || undefined);
+ok(filtraciones.length === 0, "ningún componente de cliente lee una variable que no sea pública", filtraciones.join(", ") || undefined);
 
 // ===========================================================================
 grupo("3. Los secretos solo se leen desde módulos de servidor");

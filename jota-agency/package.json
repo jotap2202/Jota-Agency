@@ -16,7 +16,8 @@
     "test:secretos": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/secretos.ts",
     "test:agente-real": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/agente-real.ts",
     "test:email-real": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/email-real.ts",
-    "preview:seed": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/sembrar-preview.ts"
+    "preview:seed": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/sembrar-preview.ts",
+    "test:e2e": "node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/e2e.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",

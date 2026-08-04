@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { Providers } from "@/components/Providers";
+import { RegistrarSW } from "@/components/RegistrarSW";
 import { EMAIL_CONTACTO } from "@/lib/contenido";
 import { idiomaActual } from "@/lib/idioma-servidor";
 import { SITIO_URL } from "@/lib/sitio";
@@ -56,6 +57,30 @@ export const metadata: Metadata = {
     title: TITULO,
     description: DESCRIPCION,
   },
+  // PWA. iOS ignora buena parte del manifiesto, así que hace falta repetirle
+  // las cosas por separado: sin esto, "Agregar a inicio" abre Safari con la
+  // barra de direcciones en vez de una app, y usa una captura de la página
+  // como ícono.
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "JOTA", statusBarStyle: "black-translucent" },
+  icons: {
+    icon: "/icon.svg",
+    apple: [{ url: "/icono-192.png", sizes: "180x180", type: "image/png" }],
+  },
+  other: {
+    // Next 15 emite el `mobile-web-app-capable` moderno. Safari recién lo
+    // entiende en versiones nuevas, así que se agrega también el viejo: los
+    // iPhone que no estén al día abren la app con la barra de direcciones.
+    "apple-mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#071316",
+  width: "device-width",
+  initialScale: 1,
+  // El notch del iPhone: sin esto, la app instalada deja franjas negras.
+  viewportFit: "cover",
 };
 
 // Datos estructurados para que Google entienda qué es JOTA (y no lo deduzca
@@ -93,6 +118,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
         />
         <Providers>{children}</Providers>
+        <RegistrarSW />
       </body>
     </html>
   );
