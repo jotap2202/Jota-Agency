@@ -61,7 +61,7 @@ producción.**
 
 ```bash
 git clone <el repo>
-cd Jota-bot/jota-agency
+cd Jota-Agency/jota-agency
 npm install
 cp .env.example .env      # completá los valores
 npx prisma db push        # crea las tablas
