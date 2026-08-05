@@ -1,0 +1,125 @@
+
+> jota-agency@0.1.0 test:e2e
+> node --experimental-strip-types --import ./pruebas/registrar.mjs pruebas/e2e.ts
+
+
+╔══════════════════════════════════════════════════════════╗
+║  FLUJO COMPLETO — 24/7 AI Agent                          ║
+╚══════════════════════════════════════════════════════════╝
+  modelo:  claude-opus-4-8
+  email:   🔴 ENVÍO REAL a jo***@jotaagency.org
+(node:64676) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/openclaw/Desktop/JOTA/Jota%20Agency/Jota-Agency/jota-agency/pruebas/e2e.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/openclaw/Desktop/JOTA/Jota Agency/Jota-Agency/jota-agency/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+━━━ PASO 1 — Dar de alta un negocio nuevo, sin tocar código
+  ✅ el negocio nuevo NO arranca activo
+  ✅ se indexó el conocimiento del formulario
+       5 fragmentos
+  ✅ quedó cargado quien recibe los avisos
+  ✅ no falta nada para activarlo
+       remitente de prueba: onboarding@resend.dev
+  ✅ activado
+       Línea para instalar en su web:
+       <script src="…/api/agente/widget?clave=pk_Qbvatclpz4IJ1RIz_RL2BmwZu-zUV5_R" async></script>
+
+━━━ PASO 2 — Entra una consulta por el chat
+  ✅ la consulta se procesó
+       Cliente: "Hey, do you guys come to Kihei? My truck is filthy…"
+       Leilani: "Yes, we cover Kihei and come right to you. For a truck, a full detail runs $249, or we also offer exterior wash and wax ($89) or interior deep clean ($129) — which service were you thinking?"
+
+━━━ PASO 3 — El agente respondió con IA real, usando la info del negocio
+  ✅ hay una respuesta de verdad, no un texto fijo
+  ✅ responde sobre la cobertura usando la FAQ cargada
+  ✅ consumió tokens reales
+       entrada=4239 salida=571
+  ✅ reportó su confianza
+       confianza=0.95
+       Cliente: "How much for a full detail on a pickup truck?"
+       Leilani: "A full detail on a pickup truck is $249. Want me to check availability for this week?"
+  ✅ usa el precio aprobado de la lista, o deriva
+  ✅ no inventa un precio que no está en la lista
+
+━━━ PASO 4 — Captura y calificación del lead
+       Cliente: "I'm Alex Tanaka, alex.tanaka@example.invalid, 808-555-0133…"
+       Leilani: "Let me pass this to someone on the Maui Mobile Detailing team so you get an exact answer. They'll be in touch shortly."
+  ✅ se creó el lead
+  ✅ capturó el nombre
+       Alex
+  ✅ capturó el email
+       alex.tanaka@example.invalid
+  ✅ capturó el teléfono
+       8085550133
+  ✅ lo calificó con un score usable
+       score=98 · confianza=alta
+  ✅ NO inventó un presupuesto que nadie mencionó
+       A favor: Pide "Full detail", que el negocio ofrece · Intención: appointment_request · Urgencia alta · Plazo: before Friday this week
+       Falta:   No mencionó presupuesto · No se sabe si decide él
+  ✅ el score viene explicado, no es un número suelto
+
+━━━ PASO 5 — Contacto y conversación quedaron registrados
+  ✅ el contacto está en la base
+       contactos=1
+  ✅ la conversación está en la base
+       conversaciones=1
+  ✅ todos los mensajes de ida y vuelta quedaron guardados
+       mensajes=6
+  ✅ NINGUNA consulta quedó sin cerrar
+
+━━━ PASO 6 — Emails: al cliente y al negocio
+  ✅ se encolaron 2 email(s)
+       · error_interno → jo***@jotaagency.org · "[Maui Mobile Detailing] AI agent needs attention"
+       · resumen_interno → jo***@jotaagency.org · "New qualified lead: Alex Tanaka — Full detail"
+  ✅ salió el email interno al negocio con el resumen del lead
+
+       ── Email que recibe el dueño ──
+       Hot Lead · score 98/100 (confidence: alta)
+       Name: Alex Tanaka
+       Company: —
+       Email: alex.tanaka@example.invalid
+       Phone: 8085550133
+       Channel: website_chat
+       Service: Full detail
+       Main need: Truck is filthy
+       Budget: not stated
+       Timeline: before Friday this week
+       Urgency: alta
+       Lead score: 98 / 100 — Hot Lead (confidence: alta)
+       Next action: confirm_slot
+       Appointment: none booked
+       Why it scored well: Pide "Full detail", que el negocio ofrece; Intención: appointment_request; Urgencia alta; Plazo: before Friday this week; Contacto: nombre, email, teléfono; Kihei está dentro del área; 3 mensajes del contacto · ya había escrito antes
+       Still missing: No mencionó presupuesto; No se sabe si decide él
+       Summary: Thanks Alex. I have openings Wednesday, Aug 5 at 8:00 AM, 8:30 AM, or 9:00 AM HST. Which works best for you?
+       Conversation: http://localhost:3000/ceo/agent/inbox/cmsfhtvzr001duuwkb2c8rfnh
+  ✅ Resend aceptó 2 email(s)
+       fallidos=0
+  ✅ todo lo enviado fue a la dirección autorizada
+
+━━━ PASO 7 — Human handoff
+       Cliente: "Can you give me 40% off… and do you detail boats?"
+       Leilani: "Let me pass this to someone on the Maui Mobile Detailing team so you get an exact answer. They'll be in touch shortly."
+  ✅ NO concede el descuento ni afirma que hace botes
+  ✅ el pedido de descuento terminó en manos de una persona
+       derivadas=2 · aprobaciones pendientes=0
+
+━━━ PASO 8 — Todo esto es lo que ve el panel
+       Consultas recibidas:  4
+       Respondidas:          4 (100%)
+       1ª respuesta:         0.1 min
+       Leads capturados:     2 (1 calificados)
+       Derivadas a humano:   2
+       Fuera de horario:     0
+       Costo de IA:          US$ 0.1800
+  ✅ el panel cuenta las consultas
+  ✅ el panel muestra el lead
+  ✅ el panel muestra el costo real
+  ✅ nada terminó en la cola de errores
+
+─────────────────────────────────────────────
+Costo real de esta corrida: US$ 0.1800
+Conversaciones: 1 · tokens: 24883
+Limpieza: el negocio de prueba se borró.
+
+✅ 33/33 comprobaciones del flujo completo pasaron
+

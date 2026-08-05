@@ -17,6 +17,11 @@
   --green: #3dd68c;
   --red: #f2555a;
   --blue: #3b82f6;
+
+  /* shadcn/ui tokens (mapped onto the existing dark theme) */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --muted-foreground: var(--muted);
 }
 
 @theme inline {
@@ -31,6 +36,9 @@
   --color-green: var(--green);
   --color-red: var(--red);
   --color-blue: var(--blue);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted-foreground: var(--muted-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -55,4 +63,26 @@ body {
 
 input::placeholder {
   color: var(--muted);
+}
+
+/* Spinner used as the Suspense fallback in <SplineScene> (components/ui/splite.tsx) */
+.loader {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  animation: loader-spin 0.7s linear infinite;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader {
+    animation-duration: 2s;
+  }
 }
