@@ -112,7 +112,7 @@ export async function pensar(p: PedidoAgente): Promise<RespuestaAgente> {
         continue;
       }
 
-      const validado = validarSalida(bloque.input, p.fuenteTexto);
+      const validado = validarSalida(bloque.input, p.fuenteTexto, p.t.servicios);
       if (!validado.ok) {
         ultimoError = validado.motivo;
         continue;

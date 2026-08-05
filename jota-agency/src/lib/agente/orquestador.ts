@@ -156,6 +156,7 @@ async function procesarGuardado(
   });
 
   if (!r.ok) {
+    console.error(`[agente] el modelo no respondió (${r.motivo}): ${r.detalle ?? ""}`);
     await ev.fallo({
       tenantId: t.id, workflow: "05-orquestador", correlationId: base.correlationId,
       referencia: intake.mensaje.id, error: `modelo: ${r.motivo} ${r.detalle}`,
@@ -180,7 +181,17 @@ async function procesarGuardado(
       },
     });
     if (segunda.ok) {
+      // La segunda vuelta piensa sobre el resultado de la herramienta y suele
+      // devolver lead_data vacío. Lo que la primera vuelta ya extrajo —y ya
+      // pasó la validación de citas— no se pierde: campo por campo, se
+      // conserva el que tenga valor.
+      const previos = salida.datosLead;
       salida = segunda.salida;
+      for (const k of Object.keys(previos) as (keyof typeof previos)[]) {
+        if (salida.datosLead[k] == null && previos[k] != null) {
+          (salida.datosLead as Record<string, unknown>)[k] = previos[k];
+        }
+      }
       tokens = {
         entrada: tokens.entrada + segunda.tokens.entrada,
         salida: tokens.salida + segunda.tokens.salida,
@@ -223,6 +234,12 @@ async function procesarGuardado(
       confianza: salida.confianza, fuentes: fragmentos.map((f) => f.id),
       tokensEntrada: tokens.entrada, tokensSalida: tokens.salida,
     });
+    if (lead.score >= t.umbralAviso && lead.banda !== "spam") {
+      await avisarLeadCalificado({
+        t, canal: c.canal, conversationId, contactId,
+        salida, lead, citaInicio: null,
+      });
+    }
     await cerrar(t, intake.mensaje.id, "handoff");
     return { ...base, ok: true, estadoFinal: "handoff", respuesta: texto, leadId: lead.id };
   }
@@ -288,35 +305,9 @@ async function procesarGuardado(
 
   if (lead.score >= t.umbralAviso && lead.banda !== "spam") {
     estadoFinal = estadoFinal === "respondida" ? "calificada" : estadoFinal;
-    await avisar({
-      t,
-      evento: lead.banda === "hot" ? "hot_lead" : "nuevo_lead",
-      titulo: `${lead.etiqueta}: ${conv.contacto.nombre ?? "sin nombre"}`,
-      detalle: `${salida.intencion} · score ${lead.score}`,
-      url: `${SITIO_URL}/ceo/agent/inbox/${conversationId}`,
-      clave: `lead:${lead.id}`,
-      datosLead: {
-        nombre: [conv.contacto.nombre, conv.contacto.apellido].filter(Boolean).join(" "),
-        empresa: conv.contacto.empresa ?? "",
-        email: conv.contacto.email ?? "",
-        telefono: conv.contacto.telefono ?? "",
-        canal: c.canal,
-        servicio: salida.datosLead.servicio ?? "",
-        problema: salida.datosLead.problema ?? "",
-        presupuesto: salida.datosLead.presupuesto ?? "",
-        plazo: salida.datosLead.plazo ?? "",
-        urgencia: salida.urgencia,
-        score: String(lead.score),
-        banda: lead.etiqueta,
-        confianza: lead.confianza,
-        proximaAccion: salida.proximaAccion,
-        positivos: lead.positivos.join("|"),
-        negativos: lead.negativos.join("|"),
-        faltantes: lead.faltantes.join("|"),
-        resumen: salida.respuesta.slice(0, 500),
-        cita: cita ? cita.inicio.toISOString() : "",
-        urlConversacion: `${SITIO_URL}/ceo/agent/inbox/${conversationId}`,
-      },
+    await avisarLeadCalificado({
+      t, canal: c.canal, conversationId, contactId,
+      salida, lead, citaInicio: cita ? cita.inicio : null,
     });
   }
 
@@ -437,6 +428,63 @@ async function leadDe(tenantId: string, conversationId: string): Promise<string 
  * respuesta posterior no puede borrar el presupuesto que la persona dijo en
  * el segundo mensaje.
  */
+/**
+ * Aviso interno de lead calificado, con la ficha completa. Se manda tanto en
+ * el camino normal como cuando la conversación termina en handoff: un lead de
+ * score alto deriva a una persona a propósito, y que justo ese aviso llegara
+ * como "error interno" sin nombre, teléfono ni score era exactamente al revés.
+ */
+async function avisarLeadCalificado(o: {
+  t: Tenant;
+  canal: ConsultaEntrante["canal"];
+  conversationId: string;
+  contactId: string;
+  salida: SalidaAgente;
+  lead: Awaited<ReturnType<typeof guardarLead>>;
+  citaInicio: Date | null;
+}) {
+  const { t, lead, salida } = o;
+  // El contacto se relee acá a propósito: el snapshot del orquestador es de
+  // ANTES de guardarLead, y el asunto diría "Unknown" justo en el mensaje en
+  // el que el cliente acaba de dejar su nombre.
+  const contacto = await prisma.contact.findFirst({
+    where: paraTenant(t.id, { id: o.contactId }),
+    select: {
+      nombre: true, apellido: true, empresa: true, email: true, telefono: true,
+    },
+  });
+  await avisar({
+    t,
+    evento: lead.banda === "hot" ? "hot_lead" : "nuevo_lead",
+    titulo: `${lead.etiqueta}: ${contacto?.nombre ?? "sin nombre"}`,
+    detalle: `${salida.intencion} · score ${lead.score}`,
+    url: `${SITIO_URL}/ceo/agent/inbox/${o.conversationId}`,
+    clave: `lead:${lead.id}`,
+    datosLead: {
+      nombre: [contacto?.nombre, contacto?.apellido].filter(Boolean).join(" "),
+      empresa: contacto?.empresa ?? "",
+      email: contacto?.email ?? "",
+      telefono: contacto?.telefono ?? "",
+      canal: o.canal,
+      servicio: salida.datosLead.servicio ?? "",
+      problema: salida.datosLead.problema ?? "",
+      presupuesto: salida.datosLead.presupuesto ?? "",
+      plazo: salida.datosLead.plazo ?? "",
+      urgencia: salida.urgencia,
+      score: String(lead.score),
+      banda: lead.etiqueta,
+      confianza: lead.confianza,
+      proximaAccion: salida.proximaAccion,
+      positivos: lead.positivos.join("|"),
+      negativos: lead.negativos.join("|"),
+      faltantes: lead.faltantes.join("|"),
+      resumen: salida.respuesta.slice(0, 500),
+      cita: o.citaInicio ? o.citaInicio.toISOString() : "",
+      urlConversacion: `${SITIO_URL}/ceo/agent/inbox/${o.conversationId}`,
+    },
+  });
+}
+
 async function guardarLead(
   t: Tenant,
   o: {

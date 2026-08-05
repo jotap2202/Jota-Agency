@@ -128,6 +128,18 @@ async function main() {
 
   await activar(tenant.id);
   await prisma.tenant.update({ where: { id: tenant.id }, data: { modo: "autonomo", umbralAviso: 55 } });
+
+  // Mientras el dominio propio no está verificado en Resend, el único
+  // remitente aceptado es onboarding@resend.dev. Igual que en email-real.ts:
+  //   TEST_EMAIL_FROM=onboarding@resend.dev
+  const remitentePrueba = process.env.TEST_EMAIL_FROM?.trim();
+  if (remitentePrueba) {
+    await prisma.tenant.update({
+      where: { id: tenant.id },
+      data: { ajustes: { emailRemitente: remitentePrueba } },
+    });
+    console.log(`       remitente de prueba: ${remitentePrueba}`);
+  }
   const t = (await prisma.tenant.findUnique({ where: { id: tenant.id } }))!;
   ok(t.estado === "activo", "activado");
   console.log(`       Línea para instalar en su web:`);

@@ -93,6 +93,9 @@ ${prohibido.length ? prohibido.map((p) => `- ${p}`).join("\n") : "- (nothing spe
 - A discount, contract term or refund is requested.
 - Two consecutive attempts have failed to help them.
 ${handoff.map((r) => `- ${r}`).join("\n")}
+Do NOT escalate just because the honest answer is "no": if the approved
+information clearly says the business does not cover an area or offer a
+service, state it directly. That is a grounded, high-confidence answer.
 
 === ACTIONS THAT NEED HUMAN APPROVAL ===
 ${aprobacion.length ? aprobacion.map((a) => `- ${a}`).join("\n") : "- (none)"}

@@ -38,7 +38,13 @@ export const ESQUEMA_SALIDA = {
     urgency: { type: "string", enum: ["baja", "media", "alta"] },
     confidence: {
       type: "number",
-      description: "0 to 1. How confident you are that this reply is correct and grounded in approved information.",
+      description:
+        "0 to 1. How confident you are that this reply is correct and grounded in approved information. " +
+        "It measures groundedness, NOT whether the customer got what they wanted. Calibration: " +
+        "0.9-1.0 = the reply comes directly from the business information, FAQ or retrieved knowledge — " +
+        "including a clear 'no' (an area not covered, a service not offered); " +
+        "0.6-0.8 = mostly grounded, minor gaps; " +
+        "below 0.6 = ONLY when the approved information does not contain the answer.",
     },
     lead_data: {
       type: "object",
@@ -123,7 +129,11 @@ export type ResultadoValidacion =
  * anotado en `descartados`. Es la garantía de "nunca inventes un dato para
  * subir el score", del lado del código y no de la buena voluntad del modelo.
  */
-export function validarSalida(bruto: unknown, fuenteTexto: string): ResultadoValidacion {
+export function validarSalida(
+  bruto: unknown,
+  fuenteTexto: string,
+  serviciosAprobados = "",
+): ResultadoValidacion {
   if (!bruto || typeof bruto !== "object") return { ok: false, motivo: "salida vacía o no es objeto" };
   const o = bruto as Record<string, unknown>;
 
@@ -142,7 +152,15 @@ export function validarSalida(bruto: unknown, fuenteTexto: string): ResultadoVal
     }
     const valor = texto(brutoLead[campo], 300);
     if (!valor) continue;
-    if (verificarCitado(valor, fuenteTexto)) {
+    // `servicio` es una clasificación contra el catálogo del negocio: que el
+    // modelo escriba "Drain cleaning" cuando el cliente dijo "slow drain" es
+    // lo esperado, no un invento. Para ese campo la cita vale contra el
+    // mensaje del cliente O contra el catálogo aprobado.
+    const fuenteCampo =
+      campo === "servicio" && serviciosAprobados
+        ? `${fuenteTexto}\n${serviciosAprobados}`
+        : fuenteTexto;
+    if (verificarCitado(valor, fuenteCampo)) {
       (datosLead[campo] as string | null) = valor;
     } else {
       descartados.push(campo);
@@ -188,8 +206,20 @@ export function validarSalida(bruto: unknown, fuenteTexto: string): ResultadoVal
 
   // Si se descartó un dato inventado, el modelo estaba rellenando huecos:
   // baja la confianza para que el resto del sistema lo trate con cuidado.
-  if (descartados.length > 0) {
+  //
+  // Con una excepción: los campos DESCRIPTIVOS son paráfrasis por naturaleza
+  // ("my truck is filthy" → problema: "vehicle detailing"). Descartarlos es
+  // higiene de datos, pero no dice nada sobre la calidad de la respuesta al
+  // cliente; capear la confianza por eso mandaba a handoff conversaciones
+  // perfectamente respondidas. Inventar un email, un teléfono o un
+  // presupuesto sí es grave: corrompe el contacto o infla el score, y ahí el
+  // capeo se mantiene.
+  const DESCRIPTIVOS: (keyof DatosLead)[] = ["servicio", "problema", "resultado"];
+  const descartesGraves = descartados.filter((c) => !DESCRIPTIVOS.includes(c as keyof DatosLead));
+  if (descartesGraves.length > 0) {
     salida.confianza = Math.min(salida.confianza, 0.5);
+  }
+  if (descartados.length > 0) {
     salida.factoresScore.faltantes = [
       ...salida.factoresScore.faltantes,
       ...descartados.map((c) => `${c} (descartado: no lo dijo el contacto)`),

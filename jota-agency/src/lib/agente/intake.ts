@@ -66,11 +66,37 @@ export async function recibir(t: Tenant, c: ConsultaEntrante): Promise<Resultado
     };
   }
 
-  // --- 2. Contacto: buscar o crear ---
-  const { contactId, previo } = await buscarOCrearContacto(t.id, c);
+  // --- 2 y 3. Conversación e identidad ---
+  // Si el hilo ya existe, la identidad la da la CONVERSACIÓN: el segundo
+  // mensaje del mismo chat es de la misma persona aunque llegue sin email ni
+  // teléfono. Crear un contacto anónimo por mensaje dejaba los datos que el
+  // agente extrae (nombre, email, teléfono) en contactos huérfanos, mientras
+  // el lead seguía apuntando al contacto vacío del primer mensaje.
+  const hilo = await prisma.conversation.findFirst({
+    where: paraTenant(t.id, { canal: c.canal, hiloExterno: c.hiloExterno }),
+    select: {
+      id: true,
+      contactId: true,
+      contacto: { select: { nombre: true, telefono: true, empresa: true } },
+    },
+  });
 
-  // --- 3. Conversación: continuar el hilo o abrir uno ---
-  const conversationId = await buscarOCrearConversacion(t.id, contactId, c);
+  let contactId: string;
+  let previo: boolean;
+  let conversationId: string;
+  if (hilo) {
+    await completarVacios(hilo.contactId, {
+      nombre: hilo.contacto.nombre ? null : c.nombre ?? null,
+      telefono: hilo.contacto.telefono ? null : c.telefono ?? null,
+      empresa: hilo.contacto.empresa ? null : c.empresa ?? null,
+    });
+    contactId = hilo.contactId;
+    previo = true;
+    conversationId = hilo.id;
+  } else {
+    ({ contactId, previo } = await buscarOCrearContacto(t.id, c));
+    conversationId = await buscarOCrearConversacion(t.id, contactId, c);
+  }
 
   // --- 4. GUARDAR. Punto sin retorno: de acá en adelante la consulta existe. ---
   const mensaje = await prisma.message.create({

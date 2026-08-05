@@ -79,6 +79,19 @@ async function main() {
     esDemo: true,
   });
   await activar(tenant.id);
+
+  // Mientras el dominio propio no está verificado en Resend, el único
+  // remitente que acepta es onboarding@resend.dev (y solo hacia la casilla
+  // dueña de la cuenta). TEST_EMAIL_FROM permite usarlo sin tocar el código:
+  //   TEST_EMAIL_FROM=onboarding@resend.dev
+  const remitentePrueba = process.env.TEST_EMAIL_FROM?.trim();
+  if (remitentePrueba) {
+    await prisma.tenant.update({
+      where: { id: tenant.id },
+      data: { ajustes: { emailRemitente: remitentePrueba } },
+    });
+    console.log(`  remitente: ${remitentePrueba} (override de prueba)`);
+  }
   const t = (await prisma.tenant.findUnique({ where: { id: tenant.id } }))!;
 
   // =========================================================================
