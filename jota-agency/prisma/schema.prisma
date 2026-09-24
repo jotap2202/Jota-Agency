@@ -76,6 +76,30 @@ model Prospecto {
   /// Por qué le dio ese score, ya calculado, para poder mostrarlo.
   scoreDetalle      String?
 
+  // ---- Prospección automática (workflow 21, lib/agente/prospeccion.ts) ----
+  // Todo opcional o con default: `prisma db push` los suma sin tocar filas.
+  /// Primer email propuesto. Queda guardado después de enviarlo: es el
+  /// asunto que usan los seguimientos para seguir en el mismo hilo.
+  borradorAsunto   String?
+  borradorTexto    String?
+  /// Solo sale lo aprobado (a mano desde el panel, o solo en modo automático).
+  borradorAprobado Boolean   @default(false)
+  /// 0 = todavía no se le escribió; 1 = primer email; 2 y 3 = seguimientos.
+  secuenciaPaso    Int       @default(0)
+  ultimoEnvio      DateTime?
+  /// Message-ID del primer email: la raíz del hilo.
+  hiloMessageId    String?
+  /// Conversación del agente 24/7 donde caen sus respuestas.
+  conversationId   String?
+  respondioEn      DateTime?
+  /// Cuándo se buscó el email en su web, para no buscarlo todos los días.
+  emailBuscadoEn   DateTime?
+  /// Auditoría de tiempo de respuesta: cuándo les mandamos una consulta de
+  /// prueba por su web y cuándo contestaron (null = todavía no). El primer
+  /// email abre con ese dato, que es lo que más respuestas consigue.
+  auditoriaEnviada   DateTime?
+  auditoriaRespuesta DateTime?
+
   esDemo Boolean @default(false)
 
   createdAt DateTime @default(now())
@@ -88,6 +112,7 @@ model Prospecto {
   @@index([proximoContacto])
   @@index([score])
   @@index([esDemo])
+  @@index([secuenciaPaso, ultimoEnvio])
 }
 
 // ===========================================================================
@@ -753,7 +778,7 @@ model EmailOutbox {
   references String?
 
   /// confirmacion | respuesta | faltan_datos | resumen_interno | cita_confirmada |
-  /// cita_recordatorio | seguimiento | handoff | reactivacion | error_interno
+  /// cita_recordatorio | seguimiento | handoff | reactivacion | prospeccion | error_interno
   plantilla String
   /// transaccional | marketing
   clase     String @default("transaccional")

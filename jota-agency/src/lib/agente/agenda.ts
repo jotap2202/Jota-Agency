@@ -83,6 +83,12 @@ export type OpcionesHuecos = {
   desde?: Date;
   /** Zona del contacto, para etiquetar en su hora. */
   zonaContacto?: string;
+  /**
+   * Todos los huecos libres, sin repartir ni recortar a 2–4. Lo usa la página
+   * pública /agendar, que muestra el calendario entero. El agente NO: a una
+   * persona en un chat se le ofrecen pocas opciones, no cuarenta.
+   */
+  todos?: boolean;
 };
 
 export async function huecosDisponibles(t: Tenant, o: OpcionesHuecos = {}): Promise<Hueco[]> {
@@ -108,7 +114,7 @@ export async function huecosDisponibles(t: Tenant, o: OpcionesHuecos = {}): Prom
   const huecos: Hueco[] = [];
   const { fechaISO } = fechaEnZona(desde, t.zonaHoraria);
 
-  for (let d = 0; d < dias && huecos.length < cantidad * 3; d++) {
+  for (let d = 0; d < dias && (o.todos || huecos.length < cantidad * 3); d++) {
     const fecha = sumarDiasISO(fechaISO, d);
     const [aa, mm, dd] = fecha.split("-").map(Number);
     const dia = DIAS[new Date(Date.UTC(aa, mm - 1, dd)).getUTCDay()];
@@ -123,6 +129,8 @@ export async function huecosDisponibles(t: Tenant, o: OpcionesHuecos = {}): Prom
       }
     }
   }
+
+  if (o.todos) return huecos;
 
   // Se reparten en días distintos: tres horarios del mismo martes es una mala
   // oferta; martes, miércoles y jueves da chances reales de que uno sirva.

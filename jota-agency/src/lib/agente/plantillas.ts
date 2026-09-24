@@ -20,6 +20,7 @@ export type Plantilla =
   | "seguimiento"
   | "handoff"
   | "reactivacion"
+  | "prospeccion"
   | "error_interno";
 
 export type EmailArmado = { asunto: string; html: string; texto: string };
@@ -129,6 +130,21 @@ export function armar(
       const asunto = d.asunto?.trim() || `Passing this to the team — ${t.nombreNegocio}`;
       const cuerpo = `${hola}\n\n${d.mensaje ?? "I've passed your message to a member of the team so you get an accurate answer. They'll be in touch shortly."}`;
       return { asunto, html: envoltura(t, parrafos(cuerpo)), texto: cuerpo + PIE_TEXTO(t) };
+    }
+
+    case "prospeccion": {
+      // Email en frío (workflow 21). A propósito SIN la tarjeta con marca de
+      // las demás plantillas: un primer contacto que parece newsletter se lee
+      // como newsletter. Tiene que parecer lo que es, un email de una persona.
+      // Lleva dirección postal y forma de baja: los pide la ley CAN-SPAM.
+      const firma = t.firmaEmail?.trim() || `${t.nombreAgente} · ${t.nombreNegocio}`;
+      const pie = `${d.direccion ?? ""}\nNot relevant? Reply "stop" and I won't write again.`.trim();
+      const cuerpo = d.cuerpo ?? "";
+      const html = `<!doctype html><html><body style="margin:0;padding:18px;font:400 15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1c1917">
+${parrafos(cuerpo)}<p style="margin:18px 0 0">${escapar(firma).replace(/\n/g, "<br>")}</p>
+<p style="margin:26px 0 0;font-size:12px;color:#78716c">${escapar(pie).replace(/\n/g, "<br>")}</p>
+</body></html>`;
+      return { asunto: d.asunto?.trim() || t.nombreNegocio, html, texto: `${cuerpo}\n\n${firma}\n\n--\n${pie}` };
     }
 
     // ---- Internas, para el negocio ----

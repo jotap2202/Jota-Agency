@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { esAdmin } from "@/lib/admin";
-import { PROSPECTOS_MAUI } from "@/lib/prospectos-maui";
+import { LISTAS_INVESTIGADAS } from "@/lib/prospectos-listas";
 import { ProspectosTabla, type ProspectoUI } from "@/components/ProspectosTabla";
 import { fechaISO } from "@/lib/zona";
 import { agregarProspecto, importarMaui } from "./acciones";
+import { ProspeccionAutomatica, type ProspeccionUI } from "@/components/ProspeccionAutomatica";
+import { SLUG_JOTA } from "@/lib/agente/negocio-jota";
+import { estado as estadoProspeccion, resultadoAuditoria, HORAS_SIN_RESPUESTA } from "@/lib/agente/prospeccion";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -24,6 +27,16 @@ const campo = {
   fontSize: 13,
   width: "100%",
 } as const;
+
+/** Cómo se ve la auditoría en la tabla: en curso, o el resultado que va al email. */
+function textoAuditoria(enviada: Date | null, respuesta: Date | null): { estado: "sin" | "esperando" | "lista"; texto: string } {
+  if (!enviada) return { estado: "sin", texto: "" };
+  const zona = "Pacific/Honolulu";
+  const r = resultadoAuditoria(enviada, respuesta, zona);
+  if (r) return { estado: "lista", texto: r };
+  const horas = Math.floor((Date.now() - enviada.getTime()) / 3600_000);
+  return { estado: "esperando", texto: `Esperando respuesta: ${horas} h de ${HORAS_SIN_RESPUESTA}` };
+}
 
 export default async function ProspectosPage() {
   const session = await auth();
@@ -47,17 +60,49 @@ export default async function ProspectosPage() {
     estado: p.estado,
     notas: p.notas ?? "",
     proximo: p.proximoContacto ? fechaISO(p.proximoContacto) : "",
+    auditoria: textoAuditoria(p.auditoriaEnviada, p.auditoriaRespuesta),
+    puedeAuditar: p.secuenciaPaso === 0,
   }));
 
   const sinContactar = filas.filter((p) => p.estado === "nuevo").length;
   const paraHoy = filas.filter((p) => p.proximo && p.proximo <= hoy).length;
   const enJuego = filas.filter((p) => p.estado === "reunion").length;
-  // Cuántas de la lista de Maui todavía no están cargadas, comparando por
-  // nombre igual que hace importarMaui().
+  // Cuántas de las listas investigadas todavía no están cargadas, comparando
+  // por nombre igual que hace importarMaui().
   const yaCargadas = new Set(filas.map((f) => f.empresa.trim().toLowerCase()));
-  const faltanDeMaui = PROSPECTOS_MAUI.filter(
+  const faltanDeMaui = LISTAS_INVESTIGADAS.filter(
     (p) => !yaCargadas.has(p.empresa.trim().toLowerCase()),
   ).length;
+
+  const ep = await estadoProspeccion();
+  const [conEmail, sinEmail, enCola, enSecuencia, respondieron, borradores] = await Promise.all([
+    prisma.prospecto.count({ where: { estado: "nuevo", email: { not: null } } }),
+    prisma.prospecto.count({ where: { estado: "nuevo", email: null } }),
+    prisma.prospecto.count({ where: { estado: "nuevo", secuenciaPaso: 0, borradorAprobado: true } }),
+    prisma.prospecto.count({ where: { estado: "contactado", secuenciaPaso: { in: [1, 2] }, respondioEn: null } }),
+    prisma.prospecto.count({ where: { respondioEn: { not: null } } }),
+    prisma.prospecto.findMany({
+      where: { estado: "nuevo", secuenciaPaso: 0, borradorTexto: { not: null }, borradorAprobado: false },
+      orderBy: [{ score: "desc" }, { createdAt: "asc" }],
+      take: 50,
+    }),
+  ]);
+  const slugJota = ep.config.tenantSlug ?? SLUG_JOTA;
+  const negocio = await prisma.tenant.findUnique({ where: { slug: slugJota }, select: { estado: true } });
+  const prospeccion: ProspeccionUI = {
+    slugJota,
+    negocioJota: (negocio?.estado as ProspeccionUI["negocioJota"] | undefined) ?? "no_existe",
+    activo: ep.activo,
+    avisos: ep.avisos,
+    modo: ep.config.modo,
+    limiteDiario: ep.config.limiteDiario,
+    enviados24h: ep.enviados24h,
+    conEmail, sinEmail, enCola, enSecuencia, respondieron,
+    borradores: borradores.map((b) => ({
+      id: b.id, empresa: b.empresa, rubro: b.rubro, email: b.email ?? "",
+      asunto: b.borradorAsunto ?? "", cuerpo: b.borradorTexto ?? "",
+    })),
+  };
 
   return (
     <main className="min-h-screen px-5 py-10" style={{ background: "radial-gradient(700px 320px at 50% 0%, rgba(227,179,65,0.08), transparent)" }}>
@@ -88,17 +133,19 @@ export default async function ProspectosPage() {
           </div>
         </div>
 
+        <ProspeccionAutomatica d={prospeccion} />
+
         {filas.length === 0 ? (
           <div className="rounded-3xl p-10 text-center" style={{ background: "var(--panel)", border: "1px solid var(--line)" }}>
             <p className="font-display" style={{ fontSize: 19 }}>Todavía no cargaste ningún prospecto</p>
             <p style={{ color: "var(--dim)", fontSize: 14, marginTop: 10, lineHeight: 1.7, maxWidth: 520, margin: "10px auto 0" }}>
-              Podés arrancar con {PROSPECTOS_MAUI.length} empresas reales de Maui —
-              contadores, inmobiliarias, administradoras de propiedades y clínicas— que
+              Podés arrancar con {LISTAS_INVESTIGADAS.length} empresas reales de Hawái
+              —villas de lujo, constructoras, implantes, abogados, solar, bodas y más— que
               ya están investigadas y listas para trabajar.
             </p>
             <form action={importarMaui} style={{ marginTop: 24 }}>
               <button type="submit" className="btn-gold">
-                Cargar las {PROSPECTOS_MAUI.length} empresas de Maui →
+                Cargar las {LISTAS_INVESTIGADAS.length} empresas →
               </button>
             </form>
           </div>
@@ -107,7 +154,7 @@ export default async function ProspectosPage() {
             {faltanDeMaui > 0 && (
               <form action={importarMaui} style={{ marginBottom: 20 }}>
                 <button type="submit" className="btn-ghost" style={{ fontSize: 13, padding: "10px 18px" }}>
-                  Cargar las empresas de Maui que falten ({PROSPECTOS_MAUI.length} en la lista)
+                  Cargar las empresas investigadas que falten ({faltanDeMaui} nuevas)
                 </button>
               </form>
             )}

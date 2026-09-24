@@ -6,12 +6,17 @@ import { revisar } from "@/lib/agente/salud";
 import { avisar } from "@/lib/agente/notificaciones";
 import { SITIO_URL } from "@/lib/sitio";
 import { redactar } from "@/lib/agente/seguridad";
+import { ciclo as prospeccion } from "@/lib/agente/prospeccion";
 import * as ev from "@/lib/agente/eventos";
 
 /**
  * El latido del sistema. Corre cada 15 minutos (ver vercel.json).
  *
- * Hace, en este orden y para cada negocio activo:
+ * Primero, una vez por pasada:
+ *   21 — prospección saliente de JOTA (encola antes de despachar, así lo
+ *        aprobado sale en esta misma pasada)
+ *
+ * Después, en este orden y para cada negocio activo:
  *   12 — seguimientos que vencen
  *   11 — despachar la bandeja de salida
  *   16 — recuperar consultas que quedaron sin cerrar
@@ -45,6 +50,15 @@ export async function GET(req: Request) {
 
   const resumen: Record<string, unknown>[] = [];
 
+  // Un fallo de la prospección no puede dejar sin cron al resto de los
+  // negocios: se registra y se sigue.
+  let prospeccionResumen: unknown;
+  try {
+    prospeccionResumen = await prospeccion();
+  } catch (e) {
+    prospeccionResumen = { error: redactar(e, 200) };
+  }
+
   for (const t of tenants) {
     const fila: Record<string, unknown> = { tenant: t.slug };
     try {
@@ -75,5 +89,5 @@ export async function GET(req: Request) {
   }
 
   await ev.ok({ workflow: "19-salud", correlationId, referencia: `${tenants.length} tenants` });
-  return Response.json({ ok: true, tenants: tenants.length, resumen }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json({ ok: true, tenants: tenants.length, prospeccion: prospeccionResumen, resumen }, { headers: { "Cache-Control": "no-store" } });
 }

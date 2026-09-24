@@ -390,7 +390,7 @@ export function Landing({
           </h2>
           <p className="reveal" style={{ marginTop: 20, fontSize: 14, color: "var(--dim)" }}>{t.cierre.sub}</p>
           <div className="reveal" style={{ marginTop: 32 }}>
-            <a href="#diagnostico" className="btn-gold">{t.cierre.cta} <span aria-hidden>→</span></a>
+            <a href="/agendar" className="btn-gold">{t.cierre.cta} <span aria-hidden>→</span></a>
           </div>
           <p className="reveal" style={{ marginTop: 20, fontSize: 14, color: "var(--dim)" }}>
             {t.cierre.oEscribinos}{" "}
@@ -540,7 +540,7 @@ function DiagChat({ lang, email }: { lang: Idioma; email: string }) {
 
           {!cargando && (
             <div style={{ marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-              <a href={mailto(T[lang].asuntoMail)} className="btn-gold">
+              <a href="/agendar" className="btn-gold">
                 {d.ctaLlamada} <span aria-hidden>→</span>
               </a>
               <button onClick={reiniciar} style={{ fontSize: 14, color: "var(--dim)", textDecoration: "underline", background: "none", border: "none" }}>

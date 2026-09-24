@@ -1,6 +1,6 @@
 "use client";
 
-import { EMAIL_CONTACTO, T, IDIOMA_POR_DEFECTO, type Idioma } from "@/lib/contenido";
+import { T, IDIOMA_POR_DEFECTO, type Idioma } from "@/lib/contenido";
 import { useDiagnostico } from "@/lib/useDiagnostico";
 
 export function DiagnosticoClient({ email, lang = IDIOMA_POR_DEFECTO }: { email?: string | null; lang?: Idioma }) {
@@ -59,7 +59,7 @@ export function DiagnosticoClient({ email, lang = IDIOMA_POR_DEFECTO }: { email?
           )}
 
           <div className="mt-6 flex gap-3 flex-wrap items-center">
-            <a href={`mailto:${EMAIL_CONTACTO}?subject=${encodeURIComponent(t.asuntoMail)}`} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold gold-grad" style={{ color: "var(--gold-dark)" }}>
+            <a href="/agendar" className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold gold-grad" style={{ color: "var(--gold-dark)" }}>
               {d.ctaLlamada} <span aria-hidden>→</span>
             </a>
             <button onClick={reiniciar} className="text-sm underline" style={{ color: "var(--dim)" }}>{d.denuevo}</button>
