@@ -18,6 +18,7 @@ import {
   validarBorrador, borradorBase, tocaSeguimiento, textoSeguimiento,
 } from "@/lib/agente/prospeccion";
 import { armar } from "@/lib/agente/plantillas";
+import { validarReserva } from "@/lib/agente/reserva";
 import type { Tenant } from "@prisma/client";
 
 let fallos = 0;
@@ -108,6 +109,16 @@ function puras() {
   ok(/reply "stop"/i.test(a.texto) && /reply &quot;stop&quot;/i.test(a.html), "explica cómo darse de baja");
   ok(!a.html.includes("<b>Mike</b>") && a.html.includes("&lt;b&gt;"), "escapa lo que escribió el modelo");
   ok(!a.html.includes("You're receiving this because you contacted"), "no dice que nos contactaron (sería falso en un email en frío)");
+
+  grupo("Formulario de /agendar");
+  const ahora2 = new Date("2026-09-24T20:00:00Z");
+  const base2 = { nombre: "Mike Boyd", email: "Owner@BoydMaui.com", empresa: "Boyd", inicio: "2026-09-25T20:00:00.000Z" };
+  const v = validarReserva({ ...base2, web: "boydmaui.com" }, ahora2);
+  ok(!("error" in v) && v.email === "owner@boydmaui.com" && v.web === "https://boydmaui.com", "normaliza email y completa https:// en la web");
+  ok("error" in validarReserva({ ...base2, sitio_alternativo: "x" }, ahora2) , "el campo trampa detecta bots");
+  ok((validarReserva({ ...base2, email: "no-es-email" }, ahora2) as { error: string }).error === "email", "rechaza un email inválido");
+  ok((validarReserva({ ...base2, inicio: "2026-09-24T10:00:00Z" }, ahora2) as { error: string }).error === "horario", "rechaza un horario que ya pasó");
+  ok((validarReserva({ ...base2, empresa: " " }, ahora2) as { error: string }).error === "empresa", "pide la empresa");
 }
 
 // ---------------------------------------------------------------------------
@@ -190,6 +201,33 @@ async function conBase() {
 
   const p3 = await nuevo("Otra", "info@crescenthomesmaui.com");
   ok(!(await enviarPrimerEmail(t, p3, direccion)).ok, "y otro prospecto con el mismo email no recibe nada");
+
+  grupo("Reserva pública de la llamada");
+  const { horariosLibres, reservarLlamada } = await import("@/lib/agente/reserva");
+  const libres = await horariosLibres(t);
+  ok(libres.length > 4, `muestra la agenda completa, no solo 2–4 opciones (${libres.length})`);
+  const datos = (email: string, empresa: string, i: number) => ({
+    nombre: "Ana Kealoha", email, empresa, web: null, telefono: null, mensaje: "We sell custom homes", inicio: new Date(libres[i].inicio),
+  });
+  // Un prospecto al que la secuencia le estaba escribiendo:
+  const p4 = await nuevo("Honua Builders", "hello@honuabuilders.com");
+  await enviarPrimerEmail(t, p4, direccion);
+  const r1 = await reservarLlamada(t, datos("hello@honuabuilders.com", "Honua Builders", 0));
+  ok(r1.ok, "reserva el horario");
+  const p4b = await prisma.prospecto.findUniqueOrThrow({ where: { id: p4.id } });
+  ok(p4b.estado === "reunion" && p4b.notas?.includes("/agendar") === true, "el prospecto que ya teníamos pasa a 'reunión'");
+  ok(tocaSeguimiento({ ...p4b, ultimoEnvio: new Date(0) }, new Date()) === null, "y se frenan sus seguimientos");
+  ok((await prisma.emailOutbox.count({ where: { tenantId: t.id, para: "hello@honuabuilders.com", plantilla: "cita_confirmada" } })) === 1, "sale el email de confirmación");
+  const r2 = await reservarLlamada(t, datos("otra@empresa.com", "Otra Empresa", 0));
+  ok(!r2.ok && r2.motivo === "ocupado", "otra persona NO puede reservar el mismo horario");
+  ok((await prisma.prospecto.count({ where: { empresa: "Otra Empresa" } })) === 0, "y no queda cargada como reunión");
+  const r3 = await reservarLlamada(t, datos("otra@empresa.com", "Otra Empresa", 1));
+  const nuevoP = await prisma.prospecto.findFirst({ where: { empresa: "Otra Empresa" } });
+  ok(r3.ok && nuevoP?.estado === "reunion" && nuevoP.fuente === "Web — /agendar", "alguien nuevo entra al panel como reunión, con la fuente");
+  await reservarLlamada(t, datos("otra@empresa.com", "Otra Empresa", 2));
+  const r5 = await reservarLlamada(t, datos("otra@empresa.com", "Otra Empresa", 3));
+  ok(!r5.ok && r5.motivo === "demasiadas", "una persona no puede reservar más de dos llamadas");
+  await prisma.prospecto.deleteMany({ where: { empresa: "Otra Empresa" } });
 
   await prisma.tenant.deleteMany({});
   await prisma.prospecto.deleteMany({ where: { fuente: "prueba-prospeccion" } });
