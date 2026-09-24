@@ -8,7 +8,7 @@ import { ProspectosTabla, type ProspectoUI } from "@/components/ProspectosTabla"
 import { fechaISO } from "@/lib/zona";
 import { agregarProspecto, importarMaui } from "./acciones";
 import { ProspeccionAutomatica, type ProspeccionUI } from "@/components/ProspeccionAutomatica";
-import { estado as estadoProspeccion } from "@/lib/agente/prospeccion";
+import { estado as estadoProspeccion, resultadoAuditoria, HORAS_SIN_RESPUESTA } from "@/lib/agente/prospeccion";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -26,6 +26,16 @@ const campo = {
   fontSize: 13,
   width: "100%",
 } as const;
+
+/** Cómo se ve la auditoría en la tabla: en curso, o el resultado que va al email. */
+function textoAuditoria(enviada: Date | null, respuesta: Date | null): { estado: "sin" | "esperando" | "lista"; texto: string } {
+  if (!enviada) return { estado: "sin", texto: "" };
+  const zona = "Pacific/Honolulu";
+  const r = resultadoAuditoria(enviada, respuesta, zona);
+  if (r) return { estado: "lista", texto: r };
+  const horas = Math.floor((Date.now() - enviada.getTime()) / 3600_000);
+  return { estado: "esperando", texto: `Esperando respuesta: ${horas} h de ${HORAS_SIN_RESPUESTA}` };
+}
 
 export default async function ProspectosPage() {
   const session = await auth();
@@ -49,6 +59,8 @@ export default async function ProspectosPage() {
     estado: p.estado,
     notas: p.notas ?? "",
     proximo: p.proximoContacto ? fechaISO(p.proximoContacto) : "",
+    auditoria: textoAuditoria(p.auditoriaEnviada, p.auditoriaRespuesta),
+    puedeAuditar: p.secuenciaPaso === 0,
   }));
 
   const sinContactar = filas.filter((p) => p.estado === "nuevo").length;

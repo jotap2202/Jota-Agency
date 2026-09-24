@@ -15,7 +15,7 @@
 
 import {
   configDesdeEnv, enHorarioDeEnvio, cupoDePasada, extraerEmails, dominioDe,
-  validarBorrador, borradorBase, tocaSeguimiento, textoSeguimiento,
+  validarBorrador, borradorBase, tocaSeguimiento, textoSeguimiento, resultadoAuditoria,
 } from "@/lib/agente/prospeccion";
 import { armar } from "@/lib/agente/plantillas";
 import { validarReserva } from "@/lib/agente/reserva";
@@ -109,6 +109,18 @@ function puras() {
   ok(/reply "stop"/i.test(a.texto) && /reply &quot;stop&quot;/i.test(a.html), "explica cómo darse de baja");
   ok(!a.html.includes("<b>Mike</b>") && a.html.includes("&lt;b&gt;"), "escapa lo que escribió el modelo");
   ok(!a.html.includes("You're receiving this because you contacted"), "no dice que nos contactaron (sería falso en un email en frío)");
+
+  grupo("Auditoría de tiempo de respuesta");
+  const hst = "Pacific/Honolulu";
+  const sabado = new Date("2026-09-27T07:14:00Z"); // sábado 21:14 en Hawái
+  const r37 = resultadoAuditoria(sabado, new Date(sabado.getTime() + 37 * 3600_000), hst);
+  ok(r37 === "I sent a quick inquiry through your website on Saturday at 9:14 PM. The first reply came 37 hours later.", `respuesta medida → la frase exacta (${r37})`);
+  ok(resultadoAuditoria(sabado, new Date(sabado.getTime() + 20 * 60_000), hst)?.includes("20 minutes") === true, "respuesta rápida → en minutos (también es honesto contarlo)");
+  ok(resultadoAuditoria(sabado, null, hst, new Date(sabado.getTime() + 5 * 3600_000)) === null, "sin respuesta a las 5 h → todavía no hay nada que contar");
+  ok(resultadoAuditoria(sabado, null, hst, new Date(sabado.getTime() + 52 * 3600_000))?.includes("52 hours later I still haven't heard back") === true, "sin respuesta a las 52 h → lo dice");
+  ok(resultadoAuditoria(null, null, hst) === null, "sin auditoría → null");
+  const conAud = borradorBase({ empresa: "Boyd", rubro: "", ciudad: null, contacto: "Mike" }, { nombreNegocio: "JOTA" } as Tenant, r37);
+  ok(conAud.texto.startsWith(`Hi Mike,\n\n${r37}`) && validarBorrador(conAud).ok, "la plantilla abre con la auditoría y sigue pasando las reglas");
 
   grupo("Formulario de /agendar");
   const ahora2 = new Date("2026-09-24T20:00:00Z");

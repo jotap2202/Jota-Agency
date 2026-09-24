@@ -6,6 +6,7 @@ import {
   guardarNota,
   guardarProximoContacto,
   borrarProspecto,
+  marcarAuditoria,
 } from "@/app/panel/prospectos/acciones";
 import { ESTADOS, ETIQUETA_ESTADO as ETIQUETA, COLOR_ESTADO as COLOR } from "@/lib/prospecto-estados";
 
@@ -21,6 +22,14 @@ export type ProspectoUI = {
   notas: string;
   /** YYYY-MM-DD, o "" si no tiene seguimiento agendado. */
   proximo: string;
+  auditoria: { estado: "sin" | "esperando" | "lista"; texto: string };
+  /** Solo antes del primer email: después ya no cambia nada. */
+  puedeAuditar: boolean;
+};
+
+const botonChico = {
+  background: "var(--panel-soft)", border: "1px solid var(--line)", color: "var(--text)",
+  borderRadius: 8, padding: "5px 9px", fontSize: 11.5, cursor: "pointer", whiteSpace: "nowrap" as const,
 };
 
 const celda = { padding: "12px 14px", fontSize: 13, verticalAlign: "top" as const };
@@ -89,10 +98,10 @@ export function ProspectosTabla({ prospectos, hoy }: { prospectos: ProspectoUI[]
       />
 
       <div style={{ overflowX: "auto", borderRadius: 20, border: "1px solid var(--line)", background: "var(--panel)", opacity: pendiente ? 0.6 : 1 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 960 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1140 }}>
           <thead>
             <tr>
-              {["Empresa", "Rubro", "Estado", "Seguir el", "Notas", ""].map((h) => (
+              {["Empresa", "Rubro", "Estado", "Seguir el", "Auditoría", "Notas", ""].map((h) => (
                 <th
                   key={h}
                   className="mono"
@@ -159,6 +168,41 @@ export function ProspectosTabla({ prospectos, hoy }: { prospectos: ProspectoUI[]
                       fontSize: 12,
                     }}
                   />
+                </td>
+
+                <td style={{ ...celda, minWidth: 190, maxWidth: 240 }}>
+                  {p.auditoria.estado !== "sin" && (
+                    <div style={{ fontSize: 11.5, lineHeight: 1.5, color: p.auditoria.estado === "lista" ? "var(--text)" : "var(--dim)", marginBottom: 6 }}>
+                      {p.auditoria.texto}
+                    </div>
+                  )}
+                  {p.puedeAuditar && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {p.auditoria.estado === "sin" ? (
+                        <button
+                          style={botonChico}
+                          title="Mandale ahora una consulta corta por el formulario de su web y apretá este botón"
+                          onClick={() => iniciar(() => { void marcarAuditoria(p.id, "enviada"); })}
+                        >
+                          Mandé la consulta
+                        </button>
+                      ) : (
+                        <>
+                          {p.auditoria.texto.includes("first reply") ? null : (
+                            <button style={botonChico} onClick={() => iniciar(() => { void marcarAuditoria(p.id, "respuesta"); })}>
+                              Respondieron
+                            </button>
+                          )}
+                          <button
+                            style={{ ...botonChico, color: "var(--dim)" }}
+                            onClick={() => iniciar(() => { void marcarAuditoria(p.id, "borrar"); })}
+                          >
+                            Borrar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </td>
 
                 <td style={{ ...celda, minWidth: 260 }}>

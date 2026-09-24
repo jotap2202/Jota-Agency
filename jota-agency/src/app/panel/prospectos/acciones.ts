@@ -154,3 +154,25 @@ export async function correrProspeccion() {
   await ciclo(new Date(), 40_000);
   revalidatePath("/panel/prospectos");
 }
+
+/**
+ * Auditoría de tiempo de respuesta. Se marca con un botón en el momento en que
+ * pasa ("mandé la consulta", "contestaron"), para que la hora sea la real y no
+ * una que haya que tipear después de memoria.
+ */
+export async function marcarAuditoria(id: string, que: "enviada" | "respuesta" | "borrar") {
+  await exigirAdmin();
+  const ahora = new Date();
+  const data =
+    que === "enviada"
+      ? { auditoriaEnviada: ahora, auditoriaRespuesta: null }
+      : que === "respuesta"
+        ? { auditoriaRespuesta: ahora }
+        : { auditoriaEnviada: null, auditoriaRespuesta: null };
+  // Si ya había un borrador sin el dato, se descarta para rehacerlo con él.
+  await prisma.prospecto.updateMany({
+    where: { id, secuenciaPaso: 0 },
+    data: { ...data, ...(que !== "borrar" ? { borradorTexto: null, borradorAsunto: null, borradorAprobado: false } : {}) },
+  });
+  revalidatePath("/panel/prospectos");
+}

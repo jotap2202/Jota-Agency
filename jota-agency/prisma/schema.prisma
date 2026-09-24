@@ -94,6 +94,11 @@ model Prospecto {
   respondioEn      DateTime?
   /// Cuándo se buscó el email en su web, para no buscarlo todos los días.
   emailBuscadoEn   DateTime?
+  /// Auditoría de tiempo de respuesta: cuándo les mandamos una consulta de
+  /// prueba por su web y cuándo contestaron (null = todavía no). El primer
+  /// email abre con ese dato, que es lo que más respuestas consigue.
+  auditoriaEnviada   DateTime?
+  auditoriaRespuesta DateTime?
 
   esDemo Boolean @default(false)
 

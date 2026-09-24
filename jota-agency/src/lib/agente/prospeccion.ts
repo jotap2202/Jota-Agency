@@ -152,6 +152,41 @@ export async function buscarEmail(web: string, timeoutMs = 6000): Promise<string
 }
 
 // ---------------------------------------------------------------------------
+//  Auditoría de tiempo de respuesta
+// ---------------------------------------------------------------------------
+
+/** Horas mínimas sin respuesta para poder decir "no contestaron". */
+export const HORAS_SIN_RESPUESTA = 24;
+
+/**
+ * La frase que abre el primer email, a partir de la consulta de prueba.
+ * Devuelve null si todavía no hay un resultado honesto para contar: sin
+ * consulta, o sin respuesta pero con menos de 24 horas (no contestar en dos
+ * horas no es noticia).
+ */
+export function resultadoAuditoria(
+  enviada: Date | null,
+  respuesta: Date | null,
+  zona: string,
+  ahora = new Date(),
+): string | null {
+  if (!enviada) return null;
+  const cuando = new Intl.DateTimeFormat("en-US", {
+    timeZone: zona, weekday: "long", hour: "numeric", minute: "2-digit",
+  }).format(enviada).replace(/ (\d)/, " at $1");
+  const horas = (hasta: Date) => (hasta.getTime() - enviada.getTime()) / 3600_000;
+  const legible = (h: number) =>
+    h < 1 ? `${Math.max(1, Math.round(h * 60))} minutes` : `${Math.round(h)} hour${Math.round(h) === 1 ? "" : "s"}`;
+
+  if (respuesta) {
+    return `I sent a quick inquiry through your website on ${cuando}. The first reply came ${legible(horas(respuesta))} later.`;
+  }
+  const esperando = horas(ahora);
+  if (esperando < HORAS_SIN_RESPUESTA) return null;
+  return `I sent a quick inquiry through your website on ${cuando}, and ${legible(esperando)} later I still haven't heard back.`;
+}
+
+// ---------------------------------------------------------------------------
 //  2. Redactar el primer email
 // ---------------------------------------------------------------------------
 
@@ -177,13 +212,19 @@ export function validarBorrador(b: Borrador): { ok: true } | { ok: false; motivo
 }
 
 /** Plantilla sin IA: se usa si no hay ANTHROPIC_API_KEY o si el modelo falla. */
-export function borradorBase(p: Pick<Prospecto, "empresa" | "rubro" | "ciudad" | "contacto">, t: Pick<Tenant, "nombreNegocio">): Borrador {
+export function borradorBase(
+  p: Pick<Prospecto, "empresa" | "rubro" | "ciudad" | "contacto">,
+  t: Pick<Tenant, "nombreNegocio">,
+  auditoria: string | null = null,
+): Borrador {
   const hola = p.contacto?.trim() ? `Hi ${p.contacto.trim().split(/\s+/)[0]},` : "Hi,";
   return {
-    asunto: `Quick question about ${p.empresa}`.slice(0, 80),
+    asunto: (auditoria ? "your website inquiry" : `Quick question about ${p.empresa}`).slice(0, 80),
     texto:
       `${hola}\n\n` +
-      `When someone reaches out to ${p.empresa} after hours or on a weekend, how fast do they hear back?\n\n` +
+      (auditoria
+        ? `${auditoria}\n\n`
+        : `When someone reaches out to ${p.empresa} after hours or on a weekend, how fast do they hear back?\n\n`) +
       `For businesses where one new client is worth thousands, the one who answers first usually wins. ` +
       `At ${t.nombreNegocio} we set up systems that reply to every inquiry in under a minute, 24/7, ` +
       `and follow up until they book.\n\n` +
@@ -194,10 +235,11 @@ export function borradorBase(p: Pick<Prospecto, "empresa" | "rubro" | "ciudad" |
 const HERRAMIENTA = "escribir_email";
 
 export async function redactarBorrador(
-  p: Pick<Prospecto, "empresa" | "rubro" | "ciudad" | "web" | "contacto" | "notas">,
+  p: Pick<Prospecto, "empresa" | "rubro" | "ciudad" | "web" | "contacto" | "notas" | "auditoriaEnviada" | "auditoriaRespuesta">,
   t: Tenant,
 ): Promise<Borrador & { conIa: boolean }> {
-  const base = borradorBase(p, t);
+  const auditoria = resultadoAuditoria(p.auditoriaEnviada, p.auditoriaRespuesta, t.zonaHoraria);
+  const base = borradorBase(p, t, auditoria);
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) return { ...base, conIa: false };
 
@@ -211,6 +253,7 @@ export async function redactarBorrador(
     website: p.web,
     contact_name: p.contacto,
     notes_from_our_research: p.notas,
+    response_time_test: auditoria,
   });
 
   const system = [
@@ -219,7 +262,7 @@ export async function redactarBorrador(
     "Rules:",
     "- English. Plain, human, specific to this business. 60 to 120 words. No greeting line beyond 'Hi <first name>,' or 'Hi,'.",
     "- Use ONLY facts present in the data. Never invent numbers, percentages, clients, results or anything about their business.",
-    "- If notes_from_our_research contains a response-time test result, lead with it exactly as written.",
+    "- If response_time_test is present, open the email with that sentence exactly as written. It is a real, measured fact.",
     "- No links, no attachments, no placeholders, no brackets, no signature (it is added automatically).",
     "- End with ONE low-friction question (e.g. a 15-minute call).",
     "- Subject: 2 to 7 words, lowercase is fine, no clickbait, no emojis.",
@@ -585,7 +628,12 @@ export async function ciclo(ahora = new Date(), presupuestoMs = 150_000): Promis
     const aRedactar = Math.min(4, Math.max(0, e.config.limiteDiario - pendientes));
     if (aRedactar > 0) {
       const lote = await prisma.prospecto.findMany({
-        where: { estado: "nuevo", secuenciaPaso: 0, email: { not: null }, borradorTexto: null, esDemo: false },
+        where: {
+          estado: "nuevo", secuenciaPaso: 0, email: { not: null }, borradorTexto: null, esDemo: false,
+          // Con la auditoría en curso se espera: el borrador tiene que salir
+          // con el resultado, que es el mejor argumento que tenemos.
+          NOT: { auditoriaEnviada: { gt: new Date(Date.now() - HORAS_SIN_RESPUESTA * 3600_000) }, auditoriaRespuesta: null },
+        },
         orderBy: [{ score: "desc" }, { createdAt: "asc" }],
         take: aRedactar,
       });
