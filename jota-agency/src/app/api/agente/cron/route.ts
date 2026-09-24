@@ -10,7 +10,9 @@ import { ciclo as prospeccion } from "@/lib/agente/prospeccion";
 import * as ev from "@/lib/agente/eventos";
 
 /**
- * El latido del sistema. Corre cada 15 minutos (ver vercel.json).
+ * El latido del sistema. Corre cada 15 minutos desde GitHub Actions
+ * (.github/workflows/latido.yml) y una vez por día desde vercel.json, que es
+ * lo máximo que acepta el plan Hobby de Vercel.
  *
  * Primero, una vez por pasada:
  *   21 — prospección saliente de JOTA (encola antes de despachar, así lo

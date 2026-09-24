@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Providers } from "@/components/Providers";
 import { RegistrarSW } from "@/components/RegistrarSW";
 import { EMAIL_CONTACTO } from "@/lib/contenido";
@@ -7,21 +7,28 @@ import { idiomaActual } from "@/lib/idioma-servidor";
 import { SITIO_URL } from "@/lib/sitio";
 import "./globals.css";
 
-const display = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "700"],
+// Las tipografías viven en el repo (src/app/fuentes, licencia OFL) en vez de
+// bajarse de Google Fonts en cada build: si esa descarga falla, falla el
+// deploy entero de Vercel. Mismas familias y pesos que antes.
+const display = localFont({
+  src: [
+    { path: "./fuentes/space-grotesk-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fuentes/space-grotesk-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-display",
   display: "swap",
 });
-const body = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const body = localFont({
+  src: [
+    { path: "./fuentes/ibm-plex-sans-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fuentes/ibm-plex-sans-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fuentes/ibm-plex-sans-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-body",
   display: "swap",
 });
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["500"],
+const mono = localFont({
+  src: [{ path: "./fuentes/ibm-plex-mono-latin-500-normal.woff2", weight: "500", style: "normal" }],
   variable: "--font-mono",
   display: "swap",
 });
