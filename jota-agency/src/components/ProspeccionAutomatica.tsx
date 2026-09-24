@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { aprobarBorrador, aprobarTodos, correrProspeccion, descartarBorrador } from "@/app/panel/prospectos/acciones";
+import { aprobarBorrador, aprobarTodos, correrProspeccion, crearNegocioJota, descartarBorrador } from "@/app/panel/prospectos/acciones";
 
 /**
  * Sección del panel de prospectos para el workflow 21.
@@ -23,6 +23,9 @@ export type ProspeccionUI = {
   enSecuencia: number;
   respondieron: number;
   borradores: BorradorUI[];
+  /** Estado del negocio "jota" en el agente, para guiar la puesta en marcha. */
+  negocioJota: "no_existe" | "onboarding" | "activo" | "pausado";
+  slugJota: string;
 };
 
 const campo = {
@@ -70,6 +73,23 @@ export function ProspeccionAutomatica({ d }: { d: ProspeccionUI }) {
               <li key={a} style={{ color: d.activo ? "var(--dim)" : "var(--text)" }}>{a}</li>
             ))}
           </ul>
+        )}
+
+        {d.negocioJota !== "activo" && (
+          <div style={{ marginTop: 16, fontSize: 13, lineHeight: 1.7 }}>
+            {d.negocioJota === "no_existe" ? (
+              <form action={crearNegocioJota} style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ color: "var(--dim)" }}>Paso 1: crear el negocio de JOTA en el agente, con la oferta y los precios del kit de ventas.</span>
+                <button type="submit" className="btn-gold" style={{ fontSize: 13, padding: "8px 16px" }}>Crear el negocio de JOTA</button>
+              </form>
+            ) : (
+              <span style={{ color: "var(--dim)" }}>
+                Paso 2: el negocio <code>{d.slugJota}</code> existe pero no está activo. Revisalo y activalo en{" "}
+                <Link href="/ceo/agent/businesses" style={{ color: "var(--gold)" }}>/ceo/agent/businesses</Link>, y poné{" "}
+                <code>PROSPECCION_TENANT={d.slugJota}</code> en Vercel.
+              </span>
+            )}
+          </div>
         )}
 
         <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", marginTop: 20 }}>

@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { esAdmin } from "@/lib/admin";
 import { LISTAS_INVESTIGADAS } from "@/lib/prospectos-listas";
 import { esEstado } from "@/lib/prospecto-estados";
-import { ciclo } from "@/lib/agente/prospeccion";
+import { ciclo, configDesdeEnv } from "@/lib/agente/prospeccion";
+import { crearTenant } from "@/lib/agente/onboarding";
+import { datosNegocioJota, SLUG_JOTA } from "@/lib/agente/negocio-jota";
 
 /**
  * Cada server action es un endpoint HTTP público: que la página /panel esté
@@ -174,5 +176,20 @@ export async function marcarAuditoria(id: string, que: "enviada" | "respuesta" |
     where: { id, secuenciaPaso: 0 },
     data: { ...data, ...(que !== "borrar" ? { borradorTexto: null, borradorAsunto: null, borradorAprobado: false } : {}) },
   });
+  revalidatePath("/panel/prospectos");
+}
+
+/**
+ * Crea el negocio de JOTA en el agente con la oferta del kit de ventas.
+ * Queda en `onboarding`: hay que revisarlo y activarlo en /ceo/agent/businesses.
+ */
+export async function crearNegocioJota() {
+  await exigirAdmin();
+  const session = await auth();
+  const slug = configDesdeEnv().tenantSlug ?? SLUG_JOTA;
+  const ya = await prisma.tenant.findUnique({ where: { slug } });
+  if (!ya) {
+    await crearTenant({ ...datosNegocioJota(), slug, equipo: session?.user?.email ?? "" });
+  }
   revalidatePath("/panel/prospectos");
 }

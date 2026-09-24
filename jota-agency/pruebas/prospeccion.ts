@@ -241,6 +241,15 @@ async function conBase() {
   ok(!r5.ok && r5.motivo === "demasiadas", "una persona no puede reservar más de dos llamadas");
   await prisma.prospecto.deleteMany({ where: { empresa: "Otra Empresa" } });
 
+  grupo("Negocio de JOTA en el agente");
+  const { datosNegocioJota } = await import("@/lib/agente/negocio-jota");
+  const { activar } = await import("@/lib/agente/onboarding");
+  const jota = await crearTenant({ ...datosNegocioJota(), equipo: "vos@jotaagency.org" });
+  ok(jota.tenant.slug === "jota" && jota.tenant.estado === "onboarding", "se crea como 'jota', sin activarse solo");
+  ok(jota.pendientes.length === 0 && jota.fragmentos > 0, `trae todo lo necesario para activarse (${jota.fragmentos} fragmentos de conocimiento)`);
+  ok((await activar(jota.tenant.id)).ok, "y se puede activar sin cargar nada más");
+  ok(jota.tenant.reglasPrecio.includes("997") && jota.tenant.politicas.includes("/agendar"), "J conoce los precios del kit y el link para agendar");
+
   await prisma.tenant.deleteMany({});
   await prisma.prospecto.deleteMany({ where: { fuente: "prueba-prospeccion" } });
   await prisma.$disconnect();

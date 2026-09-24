@@ -8,6 +8,7 @@ import { ProspectosTabla, type ProspectoUI } from "@/components/ProspectosTabla"
 import { fechaISO } from "@/lib/zona";
 import { agregarProspecto, importarMaui } from "./acciones";
 import { ProspeccionAutomatica, type ProspeccionUI } from "@/components/ProspeccionAutomatica";
+import { SLUG_JOTA } from "@/lib/agente/negocio-jota";
 import { estado as estadoProspeccion, resultadoAuditoria, HORAS_SIN_RESPUESTA } from "@/lib/agente/prospeccion";
 
 export const dynamic = "force-dynamic";
@@ -86,7 +87,11 @@ export default async function ProspectosPage() {
       take: 50,
     }),
   ]);
+  const slugJota = ep.config.tenantSlug ?? SLUG_JOTA;
+  const negocio = await prisma.tenant.findUnique({ where: { slug: slugJota }, select: { estado: true } });
   const prospeccion: ProspeccionUI = {
+    slugJota,
+    negocioJota: (negocio?.estado as ProspeccionUI["negocioJota"] | undefined) ?? "no_existe",
     activo: ep.activo,
     avisos: ep.avisos,
     modo: ep.config.modo,
