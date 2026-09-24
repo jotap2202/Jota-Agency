@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { esAdmin } from "@/lib/admin";
-import { PROSPECTOS_MAUI, FUENTE_MAUI } from "@/lib/prospectos-maui";
+import { LISTAS_INVESTIGADAS } from "@/lib/prospectos-listas";
 import { esEstado } from "@/lib/prospecto-estados";
 
 /**
@@ -75,9 +75,10 @@ export async function borrarProspecto(id: string) {
 }
 
 /**
- * Carga la lista inicial de Maui. Se puede apretar más de una vez sin
- * miedo: salta las empresas que ya existen (comparando por nombre), así que
- * no duplica ni pisa las notas o el estado que ya hayas cargado.
+ * Carga las listas investigadas (Maui + Hawái alto ticket). Se puede apretar
+ * más de una vez sin miedo: salta las empresas que ya existen (comparando por
+ * nombre), así que no duplica ni pisa las notas o el estado que ya hayas
+ * cargado.
  */
 export async function importarMaui() {
   await exigirAdmin();
@@ -88,7 +89,7 @@ export async function importarMaui() {
     ),
   );
 
-  const nuevos = PROSPECTOS_MAUI.filter(
+  const nuevos = LISTAS_INVESTIGADAS.filter(
     (p) => !yaEstan.has(p.empresa.trim().toLowerCase()),
   ).map((p) => ({
     empresa: p.empresa,
@@ -96,7 +97,7 @@ export async function importarMaui() {
     ciudad: p.ciudad,
     web: p.web,
     telefono: p.telefono ?? null,
-    fuente: FUENTE_MAUI,
+    fuente: p.fuente,
   }));
 
   if (nuevos.length) await prisma.prospecto.createMany({ data: nuevos });

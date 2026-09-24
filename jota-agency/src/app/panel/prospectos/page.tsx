@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { esAdmin } from "@/lib/admin";
-import { PROSPECTOS_MAUI } from "@/lib/prospectos-maui";
+import { LISTAS_INVESTIGADAS } from "@/lib/prospectos-listas";
 import { ProspectosTabla, type ProspectoUI } from "@/components/ProspectosTabla";
 import { fechaISO } from "@/lib/zona";
 import { agregarProspecto, importarMaui } from "./acciones";
@@ -52,10 +52,10 @@ export default async function ProspectosPage() {
   const sinContactar = filas.filter((p) => p.estado === "nuevo").length;
   const paraHoy = filas.filter((p) => p.proximo && p.proximo <= hoy).length;
   const enJuego = filas.filter((p) => p.estado === "reunion").length;
-  // Cuántas de la lista de Maui todavía no están cargadas, comparando por
-  // nombre igual que hace importarMaui().
+  // Cuántas de las listas investigadas todavía no están cargadas, comparando
+  // por nombre igual que hace importarMaui().
   const yaCargadas = new Set(filas.map((f) => f.empresa.trim().toLowerCase()));
-  const faltanDeMaui = PROSPECTOS_MAUI.filter(
+  const faltanDeMaui = LISTAS_INVESTIGADAS.filter(
     (p) => !yaCargadas.has(p.empresa.trim().toLowerCase()),
   ).length;
 
@@ -92,13 +92,13 @@ export default async function ProspectosPage() {
           <div className="rounded-3xl p-10 text-center" style={{ background: "var(--panel)", border: "1px solid var(--line)" }}>
             <p className="font-display" style={{ fontSize: 19 }}>Todavía no cargaste ningún prospecto</p>
             <p style={{ color: "var(--dim)", fontSize: 14, marginTop: 10, lineHeight: 1.7, maxWidth: 520, margin: "10px auto 0" }}>
-              Podés arrancar con {PROSPECTOS_MAUI.length} empresas reales de Maui —
-              contadores, inmobiliarias, administradoras de propiedades y clínicas— que
+              Podés arrancar con {LISTAS_INVESTIGADAS.length} empresas reales de Hawái
+              —villas de lujo, constructoras, implantes, abogados, solar, bodas y más— que
               ya están investigadas y listas para trabajar.
             </p>
             <form action={importarMaui} style={{ marginTop: 24 }}>
               <button type="submit" className="btn-gold">
-                Cargar las {PROSPECTOS_MAUI.length} empresas de Maui →
+                Cargar las {LISTAS_INVESTIGADAS.length} empresas →
               </button>
             </form>
           </div>
@@ -107,7 +107,7 @@ export default async function ProspectosPage() {
             {faltanDeMaui > 0 && (
               <form action={importarMaui} style={{ marginBottom: 20 }}>
                 <button type="submit" className="btn-ghost" style={{ fontSize: 13, padding: "10px 18px" }}>
-                  Cargar las empresas de Maui que falten ({PROSPECTOS_MAUI.length} en la lista)
+                  Cargar las empresas investigadas que falten ({faltanDeMaui} nuevas)
                 </button>
               </form>
             )}
