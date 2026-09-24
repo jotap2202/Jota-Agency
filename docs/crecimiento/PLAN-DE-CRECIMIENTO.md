@@ -90,6 +90,11 @@ plantilla.
 
 ### Rutina de cada día (unas 3 horas)
 
+> La parte de buscar emails, redactar, enviar y hacer seguimientos ya está
+> automatizada: ver `docs/agente-24-7/PROSPECCION.md`. A vos te queda la
+> auditoría, aprobar borradores y las reuniones.
+
+
 | Hora | Qué hacer | Cantidad |
 |---|---|---|
 | 1 | Entrar al panel `/panel/prospectos`, cargar el lote y completar email y nombre del dueño desde la web de cada uno | 50 |

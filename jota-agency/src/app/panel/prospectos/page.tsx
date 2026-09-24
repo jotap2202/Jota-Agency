@@ -7,6 +7,8 @@ import { LISTAS_INVESTIGADAS } from "@/lib/prospectos-listas";
 import { ProspectosTabla, type ProspectoUI } from "@/components/ProspectosTabla";
 import { fechaISO } from "@/lib/zona";
 import { agregarProspecto, importarMaui } from "./acciones";
+import { ProspeccionAutomatica, type ProspeccionUI } from "@/components/ProspeccionAutomatica";
+import { estado as estadoProspeccion } from "@/lib/agente/prospeccion";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -59,6 +61,32 @@ export default async function ProspectosPage() {
     (p) => !yaCargadas.has(p.empresa.trim().toLowerCase()),
   ).length;
 
+  const ep = await estadoProspeccion();
+  const [conEmail, sinEmail, enCola, enSecuencia, respondieron, borradores] = await Promise.all([
+    prisma.prospecto.count({ where: { estado: "nuevo", email: { not: null } } }),
+    prisma.prospecto.count({ where: { estado: "nuevo", email: null } }),
+    prisma.prospecto.count({ where: { estado: "nuevo", secuenciaPaso: 0, borradorAprobado: true } }),
+    prisma.prospecto.count({ where: { estado: "contactado", secuenciaPaso: { in: [1, 2] }, respondioEn: null } }),
+    prisma.prospecto.count({ where: { respondioEn: { not: null } } }),
+    prisma.prospecto.findMany({
+      where: { estado: "nuevo", secuenciaPaso: 0, borradorTexto: { not: null }, borradorAprobado: false },
+      orderBy: [{ score: "desc" }, { createdAt: "asc" }],
+      take: 50,
+    }),
+  ]);
+  const prospeccion: ProspeccionUI = {
+    activo: ep.activo,
+    avisos: ep.avisos,
+    modo: ep.config.modo,
+    limiteDiario: ep.config.limiteDiario,
+    enviados24h: ep.enviados24h,
+    conEmail, sinEmail, enCola, enSecuencia, respondieron,
+    borradores: borradores.map((b) => ({
+      id: b.id, empresa: b.empresa, rubro: b.rubro, email: b.email ?? "",
+      asunto: b.borradorAsunto ?? "", cuerpo: b.borradorTexto ?? "",
+    })),
+  };
+
   return (
     <main className="min-h-screen px-5 py-10" style={{ background: "radial-gradient(700px 320px at 50% 0%, rgba(227,179,65,0.08), transparent)" }}>
       <div style={{ maxWidth: 1240, margin: "0 auto" }}>
@@ -87,6 +115,8 @@ export default async function ProspectosPage() {
             <p>Con reunión agendada</p>
           </div>
         </div>
+
+        <ProspeccionAutomatica d={prospeccion} />
 
         {filas.length === 0 ? (
           <div className="rounded-3xl p-10 text-center" style={{ background: "var(--panel)", border: "1px solid var(--line)" }}>

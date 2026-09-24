@@ -34,7 +34,8 @@ export type Workflow =
   | "17-metricas"
   | "18-errores"
   | "19-salud"
-  | "20-onboarding";
+  | "20-onboarding"
+  | "21-prospeccion";
 
 export function nuevaCorrelacion(): string {
   return randomUUID();
