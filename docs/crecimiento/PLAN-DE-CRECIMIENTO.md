@@ -183,7 +183,7 @@ auditoría en 2 líneas.
 
 | Semana | Objetivo |
 |---|---|
-| 1 | Dominio secundario listo. Cargar los 77 prospectos en el panel. Auditar los 52 de alto ticket. Visitar 5 en Maui |
+| 1 | Dominio secundario listo. Cargar los 136 prospectos en el panel. Auditar los 52 de alto ticket. Visitar 5 en Maui |
 | 2 | Primeros 50 mensajes con auditoría. Objetivo: 3 reuniones |
 | 3 | 50 por día. Cerrar 1–2 clientes fundadores |
 | 4 | Publicar el informe de tiempos de respuesta. Encender retargeting. Revisar tasas reales y ajustar este plan |

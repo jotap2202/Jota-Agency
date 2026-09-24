@@ -11,7 +11,7 @@ Código: `jota-agency/src/lib/agente/prospeccion.ts`. Pruebas:
 ## Cómo funciona
 
 ```
- /panel/prospectos (las 77 empresas investigadas + las que sumes)
+ /panel/prospectos (las 136 empresas investigadas + las que sumes)
         │
         ▼
  1. BUSCAR EMAIL ─── en la web del propio prospecto (home y /contact).
@@ -99,5 +99,5 @@ pasar `PROSPECCION_MODO` a `automatico`.
 - **No le escribe a quien pidió la baja**, ni aunque vuelva a aparecer como
   prospecto nuevo con el mismo email.
 - **No busca empresas nuevas sola.** Las listas se investigan y se cargan
-  (hoy son 77). Automatizar la búsqueda necesita una fuente de datos paga
+  (hoy son 136). Automatizar la búsqueda necesita una fuente de datos paga
   (Google Places, Apollo); se puede sumar como paso 0.
