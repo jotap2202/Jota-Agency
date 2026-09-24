@@ -1,0 +1,47 @@
+name: Latido del agente
+
+# Llama a /api/agente/cron cada 15 minutos: seguimientos, bandeja de salida,
+# recuperación, health check y prospección saliente.
+#
+# Por qué vive acá y no en vercel.json: el plan Hobby de Vercel solo acepta
+# crons de una vez por día, y un cron más frecuente hace que Vercel RECHACE
+# TODOS los deploys ("Deployment failed" instantáneo). Eso dejó la web
+# congelada desde el 4 de agosto de 2026. vercel.json queda con un cron
+# diario como respaldo; el ritmo real lo da este workflow.
+#
+# Necesita dos secretos del repo (Settings → Secrets and variables → Actions):
+#   CRON_SECRET  el mismo valor que la variable CRON_SECRET de Vercel
+#   SITIO_URL    opcional; por defecto https://jotaagency.org
+# Sin CRON_SECRET no hace nada (y lo dice), en vez de fallar cada 15 minutos.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+# Si una corrida se atrasa, no se apilan: el cron es idempotente, pero dos a
+# la vez duplicarían trabajo.
+concurrency:
+  group: latido
+  cancel-in-progress: false
+
+jobs:
+  latido:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Llamar al cron del agente
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITIO_URL: ${{ secrets.SITIO_URL }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::notice::Falta el secreto CRON_SECRET en GitHub: el latido no corre."
+            exit 0
+          fi
+          url="${SITIO_URL:-https://jotaagency.org}/api/agente/cron"
+          codigo=$(curl -sS -o respuesta.json -w "%{http_code}" --max-time 320 \
+            -H "Authorization: Bearer $CRON_SECRET" "$url")
+          echo "HTTP $codigo"
+          head -c 2000 respuesta.json; echo
+          [ "$codigo" = "200" ]

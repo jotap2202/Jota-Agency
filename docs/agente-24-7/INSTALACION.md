@@ -90,8 +90,17 @@ El build corre `prisma db push`, así que las tablas se crean solas contra la
 tenga esa variable, sin preguntar. Revisá que sea la correcta antes del primer
 deploy.
 
-El cron de seguimientos y recuperación queda configurado en `vercel.json`:
-corre cada 15 minutos contra `/api/agente/cron`.
+El cron (seguimientos, bandeja de salida, recuperación y prospección) corre
+cada 15 minutos contra `/api/agente/cron` desde **GitHub Actions**
+(`.github/workflows/latido.yml`), no desde Vercel:
+
+- El plan Hobby de Vercel solo acepta crons diarios. Con uno más frecuente en
+  `vercel.json`, Vercel rechaza **todos** los deploys. `vercel.json` queda con
+  un cron diario de respaldo.
+- Para que el workflow funcione, cargá en GitHub (Settings → Secrets and
+  variables → Actions) el secreto `CRON_SECRET` con el **mismo valor** que la
+  variable `CRON_SECRET` de Vercel. Si tenés plan Pro de Vercel, podés volver
+  a poner `*/15 * * * *` en `vercel.json` y borrar el workflow.
 
 ### Después del primer deploy
 
